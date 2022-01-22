@@ -117,36 +117,3 @@ def controlInputRequired(current, current_v, target, timeToAlign, maxAuthority):
     return controlInput
 
 
-# Servo Control
-def aileron_actuation(controlInput, trim):
-    control_angle = controlInput*ailerons_actuation_range
-    trim_angle = trim*ailerons_actuation_range
-    output_angle = control_angle+trim_angle
-    if output_angle > ailerons_actuation_limit:
-        output_angle = ailerons_actuation_limit
-    elif output_angle < -ailerons_actuation_limit:
-        output_angle = -ailerons_actuation_limit
-
-    kit.servo[1].angle = -output_angle+ailerons_mid_point
-
-
-def elevator_actuation(controlInput, trim):
-    control_angle = controlInput*elevators_actuation_range
-    trim_angle = trim*elevators_actuation_range
-    output_angle = control_angle+trim_angle
-    if output_angle > elevators_actuation_limit:
-        output_angle = elevators_actuation_limit
-    elif output_angle < -elevators_actuation_limit:
-        output_angle = -elevators_actuation_limit
-
-    kit.servo[14].angle = output_angle+elevators_mid_point
-    kit.servo[15].angle = -output_angle+elevators_mid_point
-
-
-def throttle_control(controlInput):
-    output = controlInput*180
-    if output > 180:
-        output = 180
-    elif output < 0:
-        output = 0
-    kit.servo[0].angle = output
