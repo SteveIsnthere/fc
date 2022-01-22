@@ -1,0 +1,19 @@
+# txt = '1000'
+# encoded = txt.encode('ascii')
+# print(len(encoded))
+# Importing Libraries
+import serial
+import time
+arduino = serial.Serial('/dev/cu.usbmodem101', baudrate=115200, timeout=.1)
+def write_read(x):
+    arduino.write(bytes(x, 'utf-8'))
+    time.sleep(0.05)
+    data = arduino.readline()
+    return data
+    
+while True:
+    num = input("Enter a number: ") # Taking input from user
+    value = write_read(num)
+    print(value.decode())
+    if value == b'':
+        print("shit")
