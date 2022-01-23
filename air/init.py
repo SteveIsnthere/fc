@@ -3,6 +3,9 @@ from initHardWare import *
 import utm
 import time
 from multiprocessing import Value
+import os
+
+blackBox_path = os.path.join(os.path.expanduser('~'), "blackBox.csv")
 
 control_loop_interval = round(1000 / control_loop_freq)  # in ms
 

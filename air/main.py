@@ -1,8 +1,6 @@
 from init import *
-
 import csv
 from multiprocessing import Process
-
 
 def level0ControlLoop():
     # shared
@@ -274,7 +272,7 @@ def higherlevelControlLoop():
     last_gps_loop_update_time = time.monotonic()
     blackBox_startingTimeStamp = time.monotonic()
 
-    with open("fc/air/blackBox.csv", "w") as blackBox:
+    with open(blackBox_path, "w") as blackBox:
         blackBoxWriter = csv.writer(blackBox, delimiter=",")
         blackBoxWriter.writerow(
             [

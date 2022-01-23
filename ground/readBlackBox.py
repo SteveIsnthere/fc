@@ -1,9 +1,11 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import os
 
+blackBox_path = os.path.join(os.path.expanduser('~'), "blackBox.csv")
 # reading CSV file
-data = pd.read_csv("/Users/stevewang/fc/ground/blackBox.csv")
+data = pd.read_csv(blackBox_path)
 
 # converting column data to list
 time = np.array(data["time"].tolist())
