@@ -517,6 +517,7 @@ thread1 = Process(target=level0ControlLoop)
 thread2 = Process(target=higherlevelControlLoop)
 thread3 = Process(target=commLoop)
 
-thread1.start()
-thread2.start()
-thread3.start()
+if __name__ == '__main__':
+    thread1.start()
+    thread2.start()
+    thread3.start()
