@@ -349,6 +349,7 @@ def higherlevelControlLoop(Baro_altitude, last_Baro_altitude, Baro_vertical_spee
                     GPS_coord_x.value, GPS_coord_y.value, _, _ = utm.from_latlon(
                         GPS_latitude.value, GPS_longitude.value
                     )
+                    GPS_coord_x.value, GPS_coord_y.value = GPS_coord_x.value*600/6300, GPS_coord_y.value*600/6300
                     # print("Fix quality: {}".format(gps.fix_quality))
                     # Some attributes beyond latitude, longitude and timestamp are optional
                     # and might not be present.  Check if they're None before trying to use!

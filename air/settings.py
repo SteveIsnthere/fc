@@ -13,8 +13,8 @@ toga_thrust = 0.75
 toga_pitch = 15
 
 # performance
-roll_authority = 30  # degrees per second
-pitch_authority = 20
+roll_authority = 110  # degrees per second
+pitch_authority = 40
 yaw_authority = 5
 
 aileronTrim = 0  # 0-1
