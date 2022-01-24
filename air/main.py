@@ -2,17 +2,8 @@ from init import *
 import csv
 from multiprocessing import Process
 
-def level0ControlLoop():
-    # shared
-    # telemetry
-    global shared_pitch
-    global shared_roll
-    global shared_imu_heading
-    # commands
-    global flight_mode
-    global desired_pitch
-    global desired_roll
 
+def level0ControlLoop(shared_pitch, shared_roll, shared_imu_heading, flight_mode, desired_pitch, desired_roll, aileronTrim, elevatorTrim, shared_raw_aileron_input, shared_raw_elevator_input):
     # internal
     in_manual_control_mode = False
     # special cases
@@ -68,7 +59,7 @@ def level0ControlLoop():
         if control_loop_elapsed > control_loop_interval:
             last_control_loop_update_time = current_time
             # print(control_loop_elapsed)
-            
+
             # IMU
             # attitude
             imu_attitute = imu.euler
@@ -234,36 +225,12 @@ def level0ControlLoop():
             # print(raw_elevator_input)
 
 
-def higherlevelControlLoop():
-    # sensors
-    global Baro_altitude
-    global last_Baro_altitude
+def higherlevelControlLoop(Baro_altitude, last_Baro_altitude, Baro_vertical_speed, last_Baro_vertical_speed, Baro_temperature, last_Baro_temperature, Pitot_pressure, Pitot_temperature, GPS_locked, GPS_latitude, GPS_longitude, GPS_satellites, GPS_altitude, GPS_speed, GPS_heading, GPS_coord_x, GPS_coord_y, readyToArm, readyToFly, desired_roll, desired_pitch, desired_heading, desired_vs, shared_pitch, shared_roll, shared_imu_heading, shared_raw_aileron_input, shared_raw_elevator_input, aileronTrim, elevatorTrim):
+    
     Baro_altitude_new_data_weight = 1 - Baro_altitude_data_smooth_out
-    global Baro_vertical_speed
-    global last_Baro_vertical_speed
     Baro_vertical_speed_new_data_weight = 1 - Baro_vertical_speed_data_smooth_out
-    global Baro_temperature
-    global last_Baro_temperature
     Baro_temperature_new_data_weight = 1 - Baro_temperature_data_smooth_out
-    global Pitot_pressure
-    global Pitot_temperature
-    global GPS_locked
-    global GPS_latitude
-    global GPS_longitude
-    global GPS_satellites
-    global GPS_altitude
-    global GPS_speed
-    global GPS_heading
-    global GPS_coord_x
-    global GPS_coord_y
-    # Flight control
-    global readyToArm
-    global readyToFly
-    global desired_roll
-    global desired_pitch
-    global desired_heading
-    global desired_vs
-
+    
     higherlevelControl_loop_interval = 1 / secondary_loop_freq
     gps_loop_interval = 1 / gps_loop_freq
     last_higherlevelControl_loop_update_time = time.monotonic()
@@ -511,11 +478,16 @@ def commLoop():
                 continue
 
 
-thread1 = Process(target=level0ControlLoop)
-thread2 = Process(target=higherlevelControlLoop)
-thread3 = Process(target=commLoop)
+thread1 = Process(target=level0ControlLoop, args=(shared_pitch, shared_roll, shared_imu_heading, flight_mode,
+                  desired_pitch, desired_roll, aileronTrim, elevatorTrim, shared_raw_aileron_input, shared_raw_elevator_input))
+thread2 = Process(target=higherlevelControlLoop, args=(Baro_altitude, last_Baro_altitude, Baro_vertical_speed, last_Baro_vertical_speed, Baro_temperature, last_Baro_temperature, Pitot_pressure, Pitot_temperature, GPS_locked, GPS_latitude, GPS_longitude, GPS_satellites,
+                  GPS_altitude, GPS_speed, GPS_heading, GPS_coord_x, GPS_coord_y, readyToArm, readyToFly, desired_roll, desired_pitch, desired_heading, desired_vs, shared_pitch, shared_roll, shared_imu_heading, shared_raw_aileron_input, shared_raw_elevator_input, aileronTrim, elevatorTrim))
+# thread3 = Process(target=commLoop, args=())
 
 if __name__ == '__main__':
     thread1.start()
     thread2.start()
-    thread3.start()
+    # thread3.start()
+    thread1.join()
+    thread2.join()
+    # thread3.join()
