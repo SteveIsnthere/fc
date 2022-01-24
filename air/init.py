@@ -25,8 +25,8 @@ shared_imu_heading = Value("f", 0)
 shared_raw_aileron_input = Value("f", 0)
 shared_raw_elevator_input = Value("f", 0)
 # commands
-desired_pitch = Value("f", 0)
-desired_roll = Value("f", 0)
+desired_pitch = Value("f", 20)
+desired_roll = Value("f", -10)
 aileronTrim = Value("f", aileronTrim)
 elevatorTrim = Value("f", elevatorTrim)
 

@@ -3,6 +3,7 @@ import board
 # I2C setup
 i2c = board.I2C()  # uses board.SCL and board.SDA
 
+ksp_mode = False
 #Barometer
 import adafruit_bmp3xx
 barometer = adafruit_bmp3xx.BMP3XX_I2C(i2c)
