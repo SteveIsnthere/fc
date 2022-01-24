@@ -1,4 +1,3 @@
-from settings import *
 from initHardWare import *
 import utm
 import time

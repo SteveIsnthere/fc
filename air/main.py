@@ -53,8 +53,6 @@ def level0ControlLoop():
     elevator_trim = elevatorTrim.value
     aileron_input = None
     elevator_input = None
-    manual_aileron_input_internal = 0
-    manual_elevator_input_internal = 0
     raw_aileron_input = None
     raw_elevator_input = None
 
