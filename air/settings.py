@@ -8,9 +8,9 @@ rth_altitude = 100  # meters
 touch_down_from_launch_distance = 20  # meters
 glide_slope = 20  # degrees
 
-# hand launch
+# toga
 toga_thrust = 0.75
-toga_pitch = 15
+toga_pitch = 20
 
 # performance
 roll_authority = 30  # degrees per second
@@ -23,17 +23,18 @@ elevatorTrim = 0
 control_softness = 1  # time to align in seconds
 
 min_airspeed = 15/3.6  # meters per second
-normal_BankAngle = 30
+normal_BankAngle = 35
 max_BankAngle = 45
-normal_pitch = 20
-max_pitch = 25
+normal_pitch = 25
+max_pitch = 35
 max_aoa = 13
+max_g_force = 4
 
 # sensor
 # imu
 angular_velocity_data_smooth_out = 0.9  # 0.99-0.01
 IMU_acc_data_smooth_out = 0.9
-attitude_data_smooth_out = 0.8
+attitude_data_smooth_out = 0.85
 
 # Baro
 Baro_altitude_data_smooth_out = 0.9

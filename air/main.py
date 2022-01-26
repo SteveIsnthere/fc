@@ -1,5 +1,7 @@
+import math
 from init import *
 import csv
+import utm
 from multiprocessing import Process
 
 
@@ -8,6 +10,7 @@ def level0ControlLoop(shared_pitch, shared_roll, shared_imu_heading, flight_mode
     in_manual_control_mode = False
     # special cases
     exceed_Max_BankAngle = False
+    over_loading = False
     stall = False
     # attitude
     pitch = 0
@@ -25,6 +28,8 @@ def level0ControlLoop(shared_pitch, shared_roll, shared_imu_heading, flight_mode
     last_roll_speed = 0
     last_yaw_speed = 0
     angular_velocity_new_data_weight = 1 - angular_velocity_data_smooth_out
+    # acceleration
+    IMU_acceleration = 9.81
     # linear acceleration
     IMU_acc_x = None
     IMU_acc_y = None
@@ -33,17 +38,13 @@ def level0ControlLoop(shared_pitch, shared_roll, shared_imu_heading, flight_mode
     last_IMU_acc_y = 0
     last_IMU_acc_z = 0
     IMU_acc_new_data_weight = 1 - IMU_acc_data_smooth_out
-    # relative linear acceleration
-    acc_x = None
-    acc_y = None
-    acc_z = None
     # controls
     desired_pitch_internal = 0
     desired_roll_internal = 0
-    aileron_trim = aileronTrim.value
-    elevator_trim = elevatorTrim.value
-    aileron_input = None
-    elevator_input = None
+    aileronTrim_internal = aileronTrim.value
+    elevatorTrim_internal = elevatorTrim.value
+    last_aileron_input = 0
+    last_elevator_input = 0
     raw_aileron_input = None
     raw_elevator_input = None
 
@@ -63,38 +64,37 @@ def level0ControlLoop(shared_pitch, shared_roll, shared_imu_heading, flight_mode
             # IMU
             # attitude
             imu_attitute = imu.euler
-
             pitch_ = imu_attitute[1]
-            if pitch_ is not None and pitch_ <= 90 and pitch_ >= -90:
-                pitch = (
-                    pitch_ * attitude_new_data_weight
-                    + last_pitch * attitude_data_smooth_out
-                )
-                last_pitch = pitch
-
-            roll_ = imu_attitute[2]
-            if roll_ is not None and roll_ <= 180 and roll_ >= -180:
-                roll_ = -roll_
-                if roll_ * last_roll > 0:
-                    roll = (
-                        roll_ * attitude_new_data_weight
-                        + last_roll * attitude_data_smooth_out
+            if pitch_ is not None:
+                if pitch_ <= 90 and pitch_ >= -90:
+                    pitch = (
+                        pitch_ * attitude_new_data_weight
+                        + last_pitch * attitude_data_smooth_out
                     )
-                else:  # 180 -> -180
-                    roll = roll_
-                last_roll = roll
+                    last_pitch = pitch
 
-            heading_ = imu_attitute[0]
-            if heading_ is not None and heading_ <= 360 and heading_ >= 0:
-                heading = (
-                    heading_ * attitude_new_data_weight
-                    + last_heading * attitude_data_smooth_out
-                )
-                last_heading = heading
+                roll_ = imu_attitute[2]
+                if roll_ <= 180 and roll_ >= -180:
+                    roll_ = -roll_
+                    if roll_ * last_roll > 0:
+                        roll = (
+                            roll_ * attitude_new_data_weight
+                            + last_roll * attitude_data_smooth_out
+                        )
+                    else:  # 180 -> -180
+                        roll = roll_
+                    last_roll = roll
+
+                heading_ = imu_attitute[0]
+                if heading_ <= 360 and heading_ >= 0:
+                    heading = (
+                        heading_ * attitude_new_data_weight
+                        + last_heading * attitude_data_smooth_out
+                    )
+                    last_heading = heading
 
             # angular velocity
             imu_angular_velocity = imu.gyro  # [roll,pitch,yaw]
-
             roll_speed_ = imu_angular_velocity[0]
             if roll_speed_ is not None:
                 roll_speed = (
@@ -103,26 +103,31 @@ def level0ControlLoop(shared_pitch, shared_roll, shared_imu_heading, flight_mode
                 )
                 last_roll_speed = roll_speed
 
-            pitch_speed_ = imu_angular_velocity[1]
-            if pitch_speed_ is not None:
+                pitch_speed_ = imu_angular_velocity[1]
                 pitch_speed = (
                     pitch_speed_ * angular_velocity_new_data_weight
                     + last_pitch_speed * angular_velocity_data_smooth_out
                 )
                 last_pitch_speed = pitch_speed
 
-            yaw_speed_ = imu_angular_velocity[2]
-            if yaw_speed_ is not None:
+                yaw_speed_ = imu_angular_velocity[2]
                 yaw_speed = (
                     yaw_speed_ * angular_velocity_new_data_weight
                     + last_yaw_speed * angular_velocity_data_smooth_out
                 )
                 last_yaw_speed = yaw_speed
 
-            # linear_acceleration
-            imu_acc = imu.linear_acceleration
+            # acceleration
+            imu_raw_acc = imu.acceleration
+            if imu_raw_acc[0] is not None:
+                _IMU_acceleration = math.sqrt(
+                    imu_raw_acc[0]**2+imu_raw_acc[1]**2+imu_raw_acc[2]**2)
+                if _IMU_acceleration > 0 and _IMU_acceleration < 200:
+                    IMU_acceleration = _IMU_acceleration
 
-            IMU_acc_x_ = imu_acc[0]
+            # linear_acceleration
+            imu_linear_acc = imu.linear_acceleration
+            IMU_acc_x_ = imu_linear_acc[0]
             if IMU_acc_x_ is not None:
                 IMU_acc_x = (
                     IMU_acc_x_ * IMU_acc_new_data_weight
@@ -130,26 +135,20 @@ def level0ControlLoop(shared_pitch, shared_roll, shared_imu_heading, flight_mode
                 )
                 last_IMU_acc_x = IMU_acc_x
 
-            IMU_acc_y_ = imu_acc[1]
-            if IMU_acc_y_ is not None:
+                IMU_acc_y_ = imu_linear_acc[1]
                 IMU_acc_y = (
                     IMU_acc_y_ * IMU_acc_new_data_weight
                     + last_IMU_acc_y * IMU_acc_data_smooth_out
                 )
                 last_IMU_acc_y = IMU_acc_y
 
-            IMU_acc_z_ = imu_acc[2]
-            if IMU_acc_z_ is not None:
+                IMU_acc_z_ = imu_linear_acc[2]
                 IMU_acc_z = (
                     IMU_acc_z_ * IMU_acc_new_data_weight
                     + last_IMU_acc_z * IMU_acc_data_smooth_out
                 )
                 last_IMU_acc_z = IMU_acc_z
 
-            # relative linear acceleration
-            acc_x = None
-            acc_y = None
-            acc_z = None
             # controls
             if not in_manual_control_mode:
                 # check for special cases
@@ -157,50 +156,46 @@ def level0ControlLoop(shared_pitch, shared_roll, shared_imu_heading, flight_mode
                     exceed_Max_BankAngle = False
                 elif roll > max_BankAngle or roll < -max_BankAngle:
                     exceed_Max_BankAngle = True
-
-                    # translate to rawinputs
-                if not exceed_Max_BankAngle:  # normal flight
-                    aileron_input = controlInputRequired(
-                        roll,
-                        roll_speed,
-                        desired_roll_internal,
-                        control_softness,
-                        roll_authority,
-                    )
-                    elevator_input = controlInputRequired(
-                        pitch,
-                        pitch_speed,
-                        desired_pitch_internal,
-                        control_softness,
-                        pitch_authority,
-                    )
-                else:  # exceed_Max_BankAngle
-                    # ease load, level the wing
-                    aileron_input = controlInputRequired(
-                        roll,
-                        roll_speed,
-                        0,
-                        control_softness / 2,
-                        roll_authority * 0.75,
-                    )
-                    elevator_input = 0
-
-                raw_aileron_input = aileron_input
-                raw_elevator_input = elevator_input
-
+                if IMU_acceleration > max_acceleration:
+                    over_loading = True
+                # translate to rawinputs
+                raw_aileron_input = controlInputRequired(
+                    roll,
+                    roll_speed,
+                    desired_roll_internal,
+                    control_softness,
+                    roll_authority,
+                )
+                raw_elevator_input = controlInputRequired(
+                    pitch,
+                    pitch_speed,
+                    desired_pitch_internal,
+                    control_softness,
+                    pitch_authority,
+                )
+                # special cases
+                if over_loading:
+                    max_elevator_input_underLoad = last_elevator_input*0.7
+                    if raw_elevator_input > max_elevator_input_underLoad:
+                        raw_elevator_input = max_elevator_input_underLoad
+                if exceed_Max_BankAngle:
+                    raw_aileron_input *= 1.5
+                    raw_elevator_input = 0
+                # execute the controls
                 if raw_aileron_input > 1:  # raw control capped out at 100%
                     raw_aileron_input = 1
                 elif raw_aileron_input < -1:
                     raw_aileron_input = -1
-
                 if raw_elevator_input > 1:
                     raw_elevator_input = 1
                 elif raw_elevator_input < -1:
                     raw_elevator_input = -1
-
-                    # execute the controls
-                aileron_actuation(raw_aileron_input, aileron_trim)
-                elevator_actuation(raw_elevator_input, elevator_trim)
+                last_aileron_input = raw_aileron_input
+                last_elevator_input = raw_elevator_input
+                aileron_actuation(raw_aileron_input, aileronTrim_internal)
+                elevator_actuation(raw_elevator_input, elevatorTrim_internal)
+                # restore the special cases
+                over_loading = False
 
         # secondary loop
         if secondary_loop_elapsed > secondary_loop_interval:
@@ -215,22 +210,24 @@ def level0ControlLoop(shared_pitch, shared_roll, shared_imu_heading, flight_mode
             shared_pitch.value = pitch
             shared_roll.value = roll
             shared_imu_heading.value = heading
-            shared_raw_aileron_input.value = raw_aileron_input
-            shared_raw_elevator_input.value = raw_elevator_input
+            shared_accceleration.value = IMU_acceleration
+            if not in_manual_control_mode:
+                shared_raw_aileron_input.value = raw_aileron_input
+                shared_raw_elevator_input.value = raw_elevator_input
             # fetch the commands
             desired_pitch_internal = desired_pitch.value
             desired_roll_internal = desired_roll.value
-            aileron_trim = aileronTrim.value
-            elevator_trim = elevatorTrim.value
+            aileronTrim_internal = aileronTrim.value
+            elevatorTrim_internal = elevatorTrim.value
             # print(raw_elevator_input)
 
 
 def higherlevelControlLoop(Baro_altitude, last_Baro_altitude, Baro_vertical_speed, last_Baro_vertical_speed, Baro_temperature, last_Baro_temperature, Pitot_pressure, Pitot_temperature, GPS_locked, GPS_latitude, GPS_longitude, GPS_satellites, GPS_altitude, GPS_speed, GPS_heading, GPS_coord_x, GPS_coord_y, readyToArm, readyToFly, desired_roll, desired_pitch, desired_heading, desired_vs, shared_pitch, shared_roll, shared_imu_heading, shared_raw_aileron_input, shared_raw_elevator_input, aileronTrim, elevatorTrim):
-    
+
     Baro_altitude_new_data_weight = 1 - Baro_altitude_data_smooth_out
     Baro_vertical_speed_new_data_weight = 1 - Baro_vertical_speed_data_smooth_out
     Baro_temperature_new_data_weight = 1 - Baro_temperature_data_smooth_out
-    
+
     higherlevelControl_loop_interval = 1 / secondary_loop_freq
     gps_loop_interval = 1 / gps_loop_freq
     last_higherlevelControl_loop_update_time = time.monotonic()
@@ -258,7 +255,8 @@ def higherlevelControlLoop(Baro_altitude, last_Baro_altitude, Baro_vertical_spee
                 "GPS_speed",
                 "GPS_satellites",
                 "aileronTrim",
-                "elevatorTrim"
+                "elevatorTrim",
+                "accceleration"
             ]
         )  # header
         while True:
@@ -340,7 +338,7 @@ def higherlevelControlLoop(Baro_altitude, last_Baro_altitude, Baro_vertical_spee
                 # print(gps_loop_elapsed)
                 gps.update()
                 # Every second print out current location details if there's a fix.
-                if not gps.has_fix:
+                if not gps.has_3d_fix:
                     GPS_locked.value = 0
                 else:
                     GPS_locked.value = 1
@@ -350,7 +348,9 @@ def higherlevelControlLoop(Baro_altitude, last_Baro_altitude, Baro_vertical_spee
                         GPS_latitude.value, GPS_longitude.value
                     )
                     if ksp_mode:
-                        GPS_coord_x.value, GPS_coord_y.value = GPS_coord_x.value*600/6371, GPS_coord_y.value*600/6371
+                        GPS_coord_x.value, GPS_coord_y.value = GPS_coord_x.value * \
+                            600/6371, GPS_coord_y.value*600/6371
+
                     # print("Fix quality: {}".format(gps.fix_quality))
                     # Some attributes beyond latitude, longitude and timestamp are optional
                     # and might not be present.  Check if they're None before trying to use!
@@ -386,6 +386,7 @@ def higherlevelControlLoop(Baro_altitude, last_Baro_altitude, Baro_vertical_spee
                         int(GPS_satellites.value),
                         round(aileronTrim.value, 2),
                         round(elevatorTrim.value, 2),
+                        round(shared_accceleration.value, 2),
                     ]
                     blackBoxWriter.writerow(record)
                     # print("wrote at "+str(timeStamp))
@@ -480,10 +481,24 @@ def commLoop():
                 continue
 
 
-thread1 = Process(target=level0ControlLoop, args=(shared_pitch, shared_roll, shared_imu_heading, flight_mode,
-                  desired_pitch, desired_roll, aileronTrim, elevatorTrim, shared_raw_aileron_input, shared_raw_elevator_input))
-thread2 = Process(target=higherlevelControlLoop, args=(Baro_altitude, last_Baro_altitude, Baro_vertical_speed, last_Baro_vertical_speed, Baro_temperature, last_Baro_temperature, Pitot_pressure, Pitot_temperature, GPS_locked, GPS_latitude, GPS_longitude, GPS_satellites,
-                  GPS_altitude, GPS_speed, GPS_heading, GPS_coord_x, GPS_coord_y, readyToArm, readyToFly, desired_roll, desired_pitch, desired_heading, desired_vs, shared_pitch, shared_roll, shared_imu_heading, shared_raw_aileron_input, shared_raw_elevator_input, aileronTrim, elevatorTrim))
+thread1 = Process(target=level0ControlLoop, args=(readyToArm, readyToFly, current_X, current_Y, current_Heading, init_x, init_y, init_heading, touch_down_x,
+                                                  touch_down_y, shared_pitch, shared_roll, shared_imu_heading, shared_raw_aileron_input,
+                                                  shared_raw_elevator_input, shared_accceleration, desired_pitch, desired_roll, aileronTrim, elevatorTrim,
+                                                  desired_vs, desired_heading, desired_throttle, manual_throttle_unlocked, flight_mode, manual_throttle_input,
+                                                  manual_control_update_freq, manual_roll_change_per_sec, manual_pitch_change_per_sec, circle_altitude, circle_bankAngle,
+                                                  Baro_altitude, Baro_vertical_speed, last_Baro_altitude, last_Baro_vertical_speed, Baro_temperature, last_Baro_temperature,
+                                                  Pitot_pressure, Pitot_temperature, GPS_locked, GPS_latitude, GPS_longitude, GPS_altitude, GPS_speed, GPS_heading, GPS_satellites,
+                                                  GPS_coord_x, GPS_coord_y, telemetry_mode, last_received_upLink, since_last_received_upLink, calibrate_heading, blackBox_path,
+                                                  start_up_time, control_loop_interval, secondary_loop_interval, max_acceleration))
+thread2 = Process(target=higherlevelControlLoop, args=(readyToArm, readyToFly, current_X, current_Y, current_Heading, init_x, init_y, init_heading, touch_down_x,
+                                                       touch_down_y, shared_pitch, shared_roll, shared_imu_heading, shared_raw_aileron_input,
+                                                       shared_raw_elevator_input, shared_accceleration, desired_pitch, desired_roll, aileronTrim, elevatorTrim,
+                                                       desired_vs, desired_heading, desired_throttle, manual_throttle_unlocked, flight_mode, manual_throttle_input,
+                                                       manual_control_update_freq, manual_roll_change_per_sec, manual_pitch_change_per_sec, circle_altitude, circle_bankAngle,
+                                                       Baro_altitude, Baro_vertical_speed, last_Baro_altitude, last_Baro_vertical_speed, Baro_temperature, last_Baro_temperature,
+                                                       Pitot_pressure, Pitot_temperature, GPS_locked, GPS_latitude, GPS_longitude, GPS_altitude, GPS_speed, GPS_heading, GPS_satellites,
+                                                       GPS_coord_x, GPS_coord_y, telemetry_mode, last_received_upLink, since_last_received_upLink, calibrate_heading, blackBox_path,
+                                                       start_up_time, control_loop_interval, secondary_loop_interval, max_acceleration))
 # thread3 = Process(target=commLoop, args=())
 
 if __name__ == '__main__':

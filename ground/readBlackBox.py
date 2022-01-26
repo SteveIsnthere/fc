@@ -30,6 +30,8 @@ GPS_heading = np.array(data["GPS_heading"].tolist())
 GPS_speed = np.array(data["GPS_speed"].tolist())
 GPS_satellites = np.array(data["GPS_satellites"].tolist())
 
+accceleration = np.array(data["accceleration"].tolist())
+
 # 3d flight path
 fig = plt.figure()
 ax = fig.add_subplot(projection="3d")
@@ -126,6 +128,11 @@ plt.plot(time, Baro_vertical_speed)
 plt.subplot(3, 4, 11)
 plt.title("Baro_temperature")
 plt.scatter(time, Baro_temperature,s=1)
+
+plt.subplot(3, 4, 12)
+plt.title("accceleration")
+plt.scatter(time, accceleration,s=1)
+
 
 
 
