@@ -5,7 +5,15 @@ import utm
 from multiprocessing import Process
 
 
-def level0ControlLoop(shared_pitch, shared_roll, shared_imu_heading, flight_mode, desired_pitch, desired_roll, aileronTrim, elevatorTrim, shared_raw_aileron_input, shared_raw_elevator_input):
+def level0ControlLoop(readyToArm, readyToFly, current_X, current_Y, current_Heading, init_x, init_y, init_heading, touch_down_x,
+                      touch_down_y, shared_pitch, shared_roll, shared_imu_heading, shared_raw_aileron_input,
+                      shared_raw_elevator_input, shared_accceleration, desired_pitch, desired_roll, aileronTrim, elevatorTrim,
+                      desired_vs, desired_heading, desired_throttle, manual_throttle_unlocked, flight_mode, manual_throttle_input,
+                      manual_control_update_freq, manual_roll_change_per_sec, manual_pitch_change_per_sec, circle_altitude, circle_bankAngle,
+                      Baro_altitude, Baro_vertical_speed, last_Baro_altitude, last_Baro_vertical_speed, Baro_temperature, last_Baro_temperature,
+                      Pitot_pressure, Pitot_temperature, GPS_locked, GPS_latitude, GPS_longitude, GPS_altitude, GPS_speed, GPS_heading, GPS_satellites,
+                      GPS_coord_x, GPS_coord_y, telemetry_mode, last_received_upLink, since_last_received_upLink, calibrate_heading, blackBox_path,
+                      start_up_time, control_loop_interval, secondary_loop_interval, max_acceleration):
     # internal
     in_manual_control_mode = False
     # special cases
@@ -175,7 +183,7 @@ def level0ControlLoop(shared_pitch, shared_roll, shared_imu_heading, flight_mode
                 )
                 # special cases
                 if over_loading:
-                    max_elevator_input_underLoad = last_elevator_input*0.7
+                    max_elevator_input_underLoad = last_elevator_input*0.2
                     if raw_elevator_input > max_elevator_input_underLoad:
                         raw_elevator_input = max_elevator_input_underLoad
                 if exceed_Max_BankAngle:
@@ -222,7 +230,15 @@ def level0ControlLoop(shared_pitch, shared_roll, shared_imu_heading, flight_mode
             # print(raw_elevator_input)
 
 
-def higherlevelControlLoop(Baro_altitude, last_Baro_altitude, Baro_vertical_speed, last_Baro_vertical_speed, Baro_temperature, last_Baro_temperature, Pitot_pressure, Pitot_temperature, GPS_locked, GPS_latitude, GPS_longitude, GPS_satellites, GPS_altitude, GPS_speed, GPS_heading, GPS_coord_x, GPS_coord_y, readyToArm, readyToFly, desired_roll, desired_pitch, desired_heading, desired_vs, shared_pitch, shared_roll, shared_imu_heading, shared_raw_aileron_input, shared_raw_elevator_input, aileronTrim, elevatorTrim):
+def higherlevelControlLoop(readyToArm, readyToFly, current_X, current_Y, current_Heading, init_x, init_y, init_heading, touch_down_x,
+                           touch_down_y, shared_pitch, shared_roll, shared_imu_heading, shared_raw_aileron_input,
+                           shared_raw_elevator_input, shared_accceleration, desired_pitch, desired_roll, aileronTrim, elevatorTrim,
+                           desired_vs, desired_heading, desired_throttle, manual_throttle_unlocked, flight_mode, manual_throttle_input,
+                           manual_control_update_freq, manual_roll_change_per_sec, manual_pitch_change_per_sec, circle_altitude, circle_bankAngle,
+                           Baro_altitude, Baro_vertical_speed, last_Baro_altitude, last_Baro_vertical_speed, Baro_temperature, last_Baro_temperature,
+                           Pitot_pressure, Pitot_temperature, GPS_locked, GPS_latitude, GPS_longitude, GPS_altitude, GPS_speed, GPS_heading, GPS_satellites,
+                           GPS_coord_x, GPS_coord_y, telemetry_mode, last_received_upLink, since_last_received_upLink, calibrate_heading, blackBox_path,
+                           start_up_time, control_loop_interval, secondary_loop_interval, max_acceleration):
 
     Baro_altitude_new_data_weight = 1 - Baro_altitude_data_smooth_out
     Baro_vertical_speed_new_data_weight = 1 - Baro_vertical_speed_data_smooth_out

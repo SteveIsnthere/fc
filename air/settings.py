@@ -28,7 +28,7 @@ max_BankAngle = 45
 normal_pitch = 25
 max_pitch = 35
 max_aoa = 13
-max_g_force = 4
+max_g_force = 2.3
 
 # sensor
 # imu
