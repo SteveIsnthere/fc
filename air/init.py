@@ -1,7 +1,8 @@
-from initHardWare import *
+import os
 import time
 from multiprocessing import Value
-import os
+
+from initHardWare import *
 
 # init parameters
 readyToArm = Value("i", 0)
@@ -92,7 +93,7 @@ start_up_time = time.time()
 control_loop_interval = 1 / control_loop_freq
 secondary_loop_interval = 1 / secondary_loop_freq
 
-max_acceleration = max_g_force*9.81
+max_acceleration = max_g_force * 9.81
 
 '''
 (readyToArm, readyToFly, current_X, current_Y, current_Heading, init_x, init_y, init_heading, touch_down_x,
@@ -105,6 +106,7 @@ max_acceleration = max_g_force*9.81
  GPS_coord_x, GPS_coord_y, telemetry_mode, last_received_upLink, since_last_received_upLink, calibrate_heading, blackBox_path,
  start_up_time, control_loop_interval, secondary_loop_interval, max_acceleration)
 '''
+
 
 def controlInputRequired(current, current_v, target, timeToAlign, maxAuthority):
     # maxAuthority in acceleration

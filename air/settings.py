@@ -22,7 +22,7 @@ elevatorTrim = 0
 
 control_softness = 1  # time to align in seconds
 
-min_airspeed = 15/3.6  # meters per second
+min_airspeed = 15 / 3.6  # meters per second
 normal_BankAngle = 35
 max_BankAngle = 45
 normal_pitch = 25
