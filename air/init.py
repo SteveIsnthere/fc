@@ -105,7 +105,7 @@ max_acceleration = max_g_force * 9.81
   manual_roll_change_per_sec, manual_pitch_change_per_sec, circle_altitude, circle_bankAngle,
  Baro_altitude, Baro_vertical_speed, last_Baro_altitude, last_Baro_vertical_speed, Baro_temperature, last_Baro_temperature,
  Pitot_pressure, Pitot_temperature, GPS_locked, GPS_latitude, GPS_longitude, GPS_altitude, GPS_speed, GPS_heading, GPS_satellites,
- GPS_coord_x, GPS_coord_y, telemetry_mode, last_received_upLink, since_last_received_upLink, calibrate_heading, blackBox_path,
+ GPS_coord_x, GPS_coord_y, telemetry_mode, last_received_upLink, since_last_received_upLink, blackBox_path,
  start_up_time, control_loop_interval, secondary_loop_interval, max_acceleration)
 '''
 

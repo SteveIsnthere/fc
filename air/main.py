@@ -5,14 +5,14 @@ import utm
 from multiprocessing import Process
 
 
-def level0ControlLoop(readyToArm, readyToFly, current_X, current_Y, current_Heading, init_x, init_y, init_heading, touch_down_x,
+def level0ControlLoop(readyToArm, readyToFly, current_X, current_Y, current_Heading, init_x, init_y, init_imu_heading, init_gps_altitude, touch_down_x,
                       touch_down_y, shared_pitch, shared_roll, shared_imu_heading, shared_raw_aileron_input,
                       shared_raw_elevator_input, shared_accceleration, desired_pitch, desired_roll, aileronTrim, elevatorTrim,
-                      desired_vs, desired_heading, desired_throttle, manual_throttle_unlocked, flight_mode, manual_throttle_input,
-                       manual_roll_change_per_sec, manual_pitch_change_per_sec, circle_altitude, circle_bankAngle,
+                      desired_vs, desired_heading, desired_throttle, manual_throttle_unlocked, calibrate_heading, imu_heading_compensation, flight_mode, manual_throttle_input,
+                      manual_roll_change_per_sec, manual_pitch_change_per_sec, circle_altitude, circle_bankAngle,
                       Baro_altitude, Baro_vertical_speed, last_Baro_altitude, last_Baro_vertical_speed, Baro_temperature, last_Baro_temperature,
                       Pitot_pressure, Pitot_temperature, GPS_locked, GPS_latitude, GPS_longitude, GPS_altitude, GPS_speed, GPS_heading, GPS_satellites,
-                      GPS_coord_x, GPS_coord_y, telemetry_mode, last_received_upLink, since_last_received_upLink, calibrate_heading, blackBox_path,
+                      GPS_coord_x, GPS_coord_y, telemetry_mode, last_received_upLink, since_last_received_upLink, blackBox_path,
                       start_up_time, control_loop_interval, secondary_loop_interval, max_acceleration):
     # internal
     in_manual_control_mode = False
@@ -230,14 +230,14 @@ def level0ControlLoop(readyToArm, readyToFly, current_X, current_Y, current_Head
             # print(raw_elevator_input)
 
 
-def higherlevelControlLoop(readyToArm, readyToFly, current_X, current_Y, current_Heading, init_x, init_y, init_heading, touch_down_x,
+def higherlevelControlLoop(readyToArm, readyToFly, current_X, current_Y, current_Heading, init_x, init_y, init_imu_heading, init_gps_altitude, touch_down_x,
                            touch_down_y, shared_pitch, shared_roll, shared_imu_heading, shared_raw_aileron_input,
                            shared_raw_elevator_input, shared_accceleration, desired_pitch, desired_roll, aileronTrim, elevatorTrim,
-                           desired_vs, desired_heading, desired_throttle, manual_throttle_unlocked, flight_mode, manual_throttle_input,
-                            manual_roll_change_per_sec, manual_pitch_change_per_sec, circle_altitude, circle_bankAngle,
+                           desired_vs, desired_heading, desired_throttle, manual_throttle_unlocked, calibrate_heading, imu_heading_compensation, flight_mode, manual_throttle_input,
+                           manual_roll_change_per_sec, manual_pitch_change_per_sec, circle_altitude, circle_bankAngle,
                            Baro_altitude, Baro_vertical_speed, last_Baro_altitude, last_Baro_vertical_speed, Baro_temperature, last_Baro_temperature,
                            Pitot_pressure, Pitot_temperature, GPS_locked, GPS_latitude, GPS_longitude, GPS_altitude, GPS_speed, GPS_heading, GPS_satellites,
-                           GPS_coord_x, GPS_coord_y, telemetry_mode, last_received_upLink, since_last_received_upLink, calibrate_heading, blackBox_path,
+                           GPS_coord_x, GPS_coord_y, telemetry_mode, last_received_upLink, since_last_received_upLink, blackBox_path,
                            start_up_time, control_loop_interval, secondary_loop_interval, max_acceleration):
 
     Baro_altitude_new_data_weight = 1 - Baro_altitude_data_smooth_out
@@ -263,7 +263,6 @@ def higherlevelControlLoop(readyToArm, readyToFly, current_X, current_Y, current
     # calibrate_heading
     calibrate_heading_progress = False
     heading_calibration_accumulater = []
-
 
     with open(blackBox_path, "w") as blackBox:
         blackBoxWriter = csv.writer(blackBox, delimiter=",")
@@ -366,18 +365,24 @@ def higherlevelControlLoop(readyToArm, readyToFly, current_X, current_Y, current
                     # level3ControlLoop
                     # autoTrim
                     if autoTrim_On:
-                        auto_trim_aileron_input_accumulater.append(shared_raw_aileron_input)
-                        auto_trim_elevator_input_accumulater.append(shared_raw_elevator_input)
-                        if len(auto_trim_aileron_input_accumulater)>=10:
-                            aileronTrim.value = resonable_mean(auto_trim_aileron_input_accumulater)
-                            elevatorTrim.value = resonable_mean(auto_trim_aileron_input_accumulater)
+                        auto_trim_aileron_input_accumulater.append(
+                            shared_raw_aileron_input)
+                        auto_trim_elevator_input_accumulater.append(
+                            shared_raw_elevator_input)
+                        if len(auto_trim_aileron_input_accumulater) >= 10:
+                            aileronTrim.value = resonable_mean(
+                                auto_trim_aileron_input_accumulater)
+                            elevatorTrim.value = resonable_mean(
+                                auto_trim_aileron_input_accumulater)
                             auto_trim_aileron_input_accumulater = []
                             auto_trim_aileron_input_accumulater = []
                     # calibrate_heading
                     if calibrate_heading_progress:
-                        heading_calibration_accumulater.append(GPS_heading.value - shared_imu_heading.value)
-                        if len(heading_calibration_accumulater)>=10:
-                            imu_heading_compensation.value = resonable_mean(auto_trim_aileron_input_accumulater)
+                        heading_calibration_accumulater.append(
+                            GPS_heading.value - shared_imu_heading.value)
+                        if len(heading_calibration_accumulater) >= 10:
+                            imu_heading_compensation.value = resonable_mean(
+                                auto_trim_aileron_input_accumulater)
                             heading_calibration_accumulater = []
                             calibrate_heading_progress = False
 
@@ -410,23 +415,29 @@ def higherlevelControlLoop(readyToArm, readyToFly, current_X, current_Y, current
                         GPS_speed.value = gps.speed_knots * 0.51444
                     if gps.track_angle_deg is not None:
                         GPS_heading.value = gps.track_angle_deg
-                    
+
                     if not flightInitCompleted:
                         if readyToFly.value and not flightInit_in_progress:
                             flightInit_in_progress = True
                         else:
                             init_x_accumulater.append(GPS_coord_x.value)
                             init_y_accumulater.append(GPS_coord_y.value)
-                            init_imu_heading_accumulater.append(shared_imu_heading.value)
-                            init_gps_altitude_accumulater.append(GPS_altitude.value)
+                            init_imu_heading_accumulater.append(
+                                shared_imu_heading.value)
+                            init_gps_altitude_accumulater.append(
+                                GPS_altitude.value)
                             if len(init_x_accumulater) >= 10:
-                                init_x.value = resonable_mean(init_x_accumulater)
+                                init_x.value = resonable_mean(
+                                    init_x_accumulater)
                                 init_x_accumulater = []
-                                init_y.value = resonable_mean(init_y_accumulater)
+                                init_y.value = resonable_mean(
+                                    init_y_accumulater)
                                 init_y_accumulater = []
-                                init_imu_heading.value = resonable_mean(init_imu_heading_accumulater)
+                                init_imu_heading.value = resonable_mean(
+                                    init_imu_heading_accumulater)
                                 init_imu_heading_accumulater = []
-                                init_gps_altitude.value = resonable_mean(init_gps_altitude_accumulater)
+                                init_gps_altitude.value = resonable_mean(
+                                    init_gps_altitude_accumulater)
                                 init_gps_altitude_accumulater = []
                                 flightInitCompleted = True
 
@@ -527,13 +538,14 @@ def commLoop():
                             desired_throttle.value = toga_thrust
                 elif tele_command == '9':  # Change Settings
                     param_index = int(tele_payload[0:2])
-                    if param_index == 0 and bool(readyToArm.value):# init the flight
+                    # init the flight
+                    if param_index == 0 and bool(readyToArm.value):
                         if readyToFly.value != 1:
                             readyToFly.value = 1
-                    elif param_index == 1:# aileronTrim
+                    elif param_index == 1:  # aileronTrim
                         param_value = int(tele_payload[2:4])
                         aileronTrim.value += 0.01*param_value
-                    elif param_index == 2:# elevatorTrim
+                    elif param_index == 2:  # elevatorTrim
                         param_value = int(tele_payload[2:4])
                         elevatorTrim.value += 0.01*param_value
 
@@ -550,23 +562,23 @@ def commLoop():
                 continue
 
 
-thread1 = Process(target=level0ControlLoop, args=(readyToArm, readyToFly, current_X, current_Y, current_Heading, init_x, init_y, init_heading, touch_down_x,
+thread1 = Process(target=level0ControlLoop, args=(readyToArm, readyToFly, current_X, current_Y, current_Heading, init_x, init_y, init_imu_heading, init_gps_altitude, touch_down_x,
                                                   touch_down_y, shared_pitch, shared_roll, shared_imu_heading, shared_raw_aileron_input,
                                                   shared_raw_elevator_input, shared_accceleration, desired_pitch, desired_roll, aileronTrim, elevatorTrim,
-                                                  desired_vs, desired_heading, desired_throttle, manual_throttle_unlocked, flight_mode, manual_throttle_input,
-                                                   manual_roll_change_per_sec, manual_pitch_change_per_sec, circle_altitude, circle_bankAngle,
+                                                  desired_vs, desired_heading, desired_throttle, manual_throttle_unlocked, calibrate_heading, imu_heading_compensation, flight_mode, manual_throttle_input,
+                                                  manual_roll_change_per_sec, manual_pitch_change_per_sec, circle_altitude, circle_bankAngle,
                                                   Baro_altitude, Baro_vertical_speed, last_Baro_altitude, last_Baro_vertical_speed, Baro_temperature, last_Baro_temperature,
                                                   Pitot_pressure, Pitot_temperature, GPS_locked, GPS_latitude, GPS_longitude, GPS_altitude, GPS_speed, GPS_heading, GPS_satellites,
-                                                  GPS_coord_x, GPS_coord_y, telemetry_mode, last_received_upLink, since_last_received_upLink, calibrate_heading, blackBox_path,
+                                                  GPS_coord_x, GPS_coord_y, telemetry_mode, last_received_upLink, since_last_received_upLink, blackBox_path,
                                                   start_up_time, control_loop_interval, secondary_loop_interval, max_acceleration))
-thread2 = Process(target=higherlevelControlLoop, args=(readyToArm, readyToFly, current_X, current_Y, current_Heading, init_x, init_y, init_heading, touch_down_x,
+thread2 = Process(target=higherlevelControlLoop, args=(readyToArm, readyToFly, current_X, current_Y, current_Heading, init_x, init_y, init_imu_heading, init_gps_altitude, touch_down_x,
                                                        touch_down_y, shared_pitch, shared_roll, shared_imu_heading, shared_raw_aileron_input,
                                                        shared_raw_elevator_input, shared_accceleration, desired_pitch, desired_roll, aileronTrim, elevatorTrim,
-                                                       desired_vs, desired_heading, desired_throttle, manual_throttle_unlocked, flight_mode, manual_throttle_input,
-                                                        manual_roll_change_per_sec, manual_pitch_change_per_sec, circle_altitude, circle_bankAngle,
+                                                       desired_vs, desired_heading, desired_throttle, manual_throttle_unlocked, calibrate_heading, imu_heading_compensation, flight_mode, manual_throttle_input,
+                                                       manual_roll_change_per_sec, manual_pitch_change_per_sec, circle_altitude, circle_bankAngle,
                                                        Baro_altitude, Baro_vertical_speed, last_Baro_altitude, last_Baro_vertical_speed, Baro_temperature, last_Baro_temperature,
                                                        Pitot_pressure, Pitot_temperature, GPS_locked, GPS_latitude, GPS_longitude, GPS_altitude, GPS_speed, GPS_heading, GPS_satellites,
-                                                       GPS_coord_x, GPS_coord_y, telemetry_mode, last_received_upLink, since_last_received_upLink, calibrate_heading, blackBox_path,
+                                                       GPS_coord_x, GPS_coord_y, telemetry_mode, last_received_upLink, since_last_received_upLink, blackBox_path,
                                                        start_up_time, control_loop_interval, secondary_loop_interval, max_acceleration))
 # thread3 = Process(target=commLoop, args=())
 
