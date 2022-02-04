@@ -258,10 +258,10 @@ def higherlevelControlLoop(readyToArm, readyToFly, current_X, current_Y, current
     init_gps_altitude_accumulater = []
     # autoTrim
     autoTrim_On = True
-    autoTrim_effectiveness = 1/(secondary_loop_freq*2)
+    autoTrim_effectiveness = 1/(secondary_loop_freq*10)
     # calibrate_heading
     heading_calibrate_On = True
-    heading_calibration_effectiveness = 1/(gps_loop_freq*4)
+    heading_calibration_effectiveness = 1/(gps_loop_freq*10)
 
     with open(blackBox_path, "w") as blackBox:
         blackBoxWriter = csv.writer(blackBox, delimiter=",")
