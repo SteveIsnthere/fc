@@ -30,6 +30,8 @@ GPS_heading = np.array(data["GPS_heading"].tolist())
 GPS_speed = np.array(data["GPS_speed"].tolist())
 GPS_satellites = np.array(data["GPS_satellites"].tolist())
 
+aileronTrim = np.array(data["aileronTrim"].tolist())
+elevatorTrim = np.array(data["elevatorTrim"].tolist())
 accceleration = np.array(data["accceleration"].tolist())/9.81
 
 # 3d flight path
@@ -89,11 +91,14 @@ plt.subplot(3, 4, 3)
 plt.title("aileronInput")
 plt.ylim([-1.1, 1.1])
 plt.plot(time, aileronInput)
+plt.plot(time, aileronTrim)
 
 plt.subplot(3, 4, 4)
 plt.title("elevatorInput")
 plt.ylim([-1.1, 1.1])
 plt.plot(time, elevatorInput)
+plt.plot(time, elevatorTrim)
+
 
 plt.subplot(3, 4, 5)
 plt.axis('equal')

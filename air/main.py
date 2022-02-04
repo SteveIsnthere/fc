@@ -258,11 +258,10 @@ def higherlevelControlLoop(readyToArm, readyToFly, current_X, current_Y, current
     init_gps_altitude_accumulater = []
     # autoTrim
     autoTrim_On = True
-    auto_trim_aileron_input_accumulater = []
-    auto_trim_elevator_input_accumulater = []
+    autoTrim_effectiveness = 1/(secondary_loop_freq*2)
     # calibrate_heading
-    calibrate_heading_progress = False
-    heading_calibration_accumulater = []
+    heading_calibrate_On = True
+    heading_calibration_effectiveness = 1/(gps_loop_freq*4)
 
     with open(blackBox_path, "w") as blackBox:
         blackBoxWriter = csv.writer(blackBox, delimiter=",")
@@ -332,12 +331,12 @@ def higherlevelControlLoop(readyToArm, readyToFly, current_X, current_Y, current
 
                 # Flight control
                 # readyToArm
-                if not bool(flightInitCompleted):
+                if not flightInitCompleted:
                     time_since_start_up = time.time()-start_up_time
                     if time_since_start_up > 10 and GPS_locked.value == 1:
                         readyToArm.value = 1
 
-                if bool(flightInitCompleted):
+                if flightInitCompleted:
                     # throttle
                     if bool(manual_throttle_unlocked.value):
                         throttle_control(manual_throttle_input.value)
@@ -365,27 +364,9 @@ def higherlevelControlLoop(readyToArm, readyToFly, current_X, current_Y, current
                     # level3ControlLoop
                     # autoTrim
                     if autoTrim_On:
-                        auto_trim_aileron_input_accumulater.append(
-                            shared_raw_aileron_input.value)
-                        auto_trim_elevator_input_accumulater.append(
-                            shared_raw_elevator_input.value)
-                        if len(auto_trim_aileron_input_accumulater) >= 10:
-                            aileronTrim.value = resonable_mean(
-                                auto_trim_aileron_input_accumulater)
-                            elevatorTrim.value = resonable_mean(
-                                auto_trim_aileron_input_accumulater)
-                            auto_trim_aileron_input_accumulater = []
-                            auto_trim_aileron_input_accumulater = []
-                    # calibrate_heading
-                    if calibrate_heading_progress:
-                        heading_calibration_accumulater.append(
-                            GPS_heading.value - shared_imu_heading.value)
-                        if len(heading_calibration_accumulater) >= 10:
-                            imu_heading_compensation.value = resonable_mean(
-                                auto_trim_aileron_input_accumulater)
-                            heading_calibration_accumulater = []
-                            calibrate_heading_progress = False
-
+                        aileronTrim.value += (aileronTrim.value-shared_raw_aileron_input.value)*autoTrim_effectiveness
+                        elevatorTrim.value += (elevatorTrim.value-shared_raw_elevator_input.value)*autoTrim_effectiveness
+                    
             if gps_loop_elapsed > gps_loop_interval:
                 last_gps_loop_update_time = current_time
                 # print(gps_loop_elapsed)
@@ -416,6 +397,10 @@ def higherlevelControlLoop(readyToArm, readyToFly, current_X, current_Y, current
                     if gps.track_angle_deg is not None:
                         GPS_heading.value = gps.track_angle_deg
 
+                    # calibrate_heading
+                    if heading_calibrate_On:
+                        imu_heading_compensation.value += (imu_heading_compensation.value-(GPS_heading.value - shared_imu_heading.value))*heading_calibration_effectiveness
+                    # init Flight
                     if not flightInitCompleted:
                         if readyToFly.value and not flightInit_in_progress:
                             flightInit_in_progress = True
@@ -442,7 +427,8 @@ def higherlevelControlLoop(readyToArm, readyToFly, current_X, current_Y, current
                                 flightInitCompleted = True
 
                 # data recorder (blackBox)
-                if True:  # readyToFly
+                # if flightInitCompleted:  # readyToFly
+                if True:
                     timeStamp = round(
                         current_time - blackBox_startingTimeStamp, 3)
                     record = [
