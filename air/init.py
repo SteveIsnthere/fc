@@ -1,8 +1,8 @@
+from initHardWare import *
 import os
+import numpy as np
 import time
 from multiprocessing import Value
-
-from initHardWare import *
 
 # init parameters
 readyToArm = Value("i", 0)
@@ -14,7 +14,8 @@ current_Heading = Value("f", 0)
 
 init_x = Value("f", 0)
 init_y = Value("f", 0)
-init_heading = Value("f", 0)
+init_imu_heading = Value("f", 0)
+init_gps_altitude = Value("f", 0)
 
 touch_down_x = Value("f", 0)
 touch_down_y = Value("f", 0)
@@ -29,7 +30,7 @@ shared_raw_elevator_input = Value("f", 0)
 shared_accceleration = Value("f", 0)
 # commands
 desired_pitch = Value("f", 20)
-desired_roll = Value("f", -10)
+desired_roll = Value("f", -5)
 aileronTrim = Value("f", aileronTrim)
 elevatorTrim = Value("f", elevatorTrim)
 
@@ -38,11 +39,12 @@ desired_vs = Value("f", 0)
 desired_heading = Value("f", 0)
 desired_throttle = Value("f", 0)
 manual_throttle_unlocked = Value("i", 0)
+calibrate_heading = Value("i", 0)
+imu_heading_compensation = Value("f", 0)
 # flight modes
 flight_mode = Value("i", 1)
 # 0:full manual
 manual_throttle_input = Value("f", 0)
-manual_control_update_freq = Value("i", manual_control_update_freq)
 # 1:fly by wire (partial manual)
 manual_roll_change_per_sec = Value("f", 0)
 manual_pitch_change_per_sec = Value("f", 0)
@@ -96,11 +98,11 @@ secondary_loop_interval = 1 / secondary_loop_freq
 max_acceleration = max_g_force * 9.81
 
 '''
-(readyToArm, readyToFly, current_X, current_Y, current_Heading, init_x, init_y, init_heading, touch_down_x,
+(readyToArm, readyToFly, current_X, current_Y, current_Heading, init_x, init_y, init_imu_heading, init_gps_altitude,touch_down_x,
  touch_down_y, shared_pitch, shared_roll, shared_imu_heading, shared_raw_aileron_input,
  shared_raw_elevator_input, shared_accceleration, desired_pitch, desired_roll, aileronTrim, elevatorTrim,
- desired_vs, desired_heading, desired_throttle, manual_throttle_unlocked, flight_mode, manual_throttle_input,
- manual_control_update_freq, manual_roll_change_per_sec, manual_pitch_change_per_sec, circle_altitude, circle_bankAngle,
+ desired_vs, desired_heading, desired_throttle, manual_throttle_unlocked, calibrate_heading,imu_heading_compensation,flight_mode, manual_throttle_input,
+  manual_roll_change_per_sec, manual_pitch_change_per_sec, circle_altitude, circle_bankAngle,
  Baro_altitude, Baro_vertical_speed, last_Baro_altitude, last_Baro_vertical_speed, Baro_temperature, last_Baro_temperature,
  Pitot_pressure, Pitot_temperature, GPS_locked, GPS_latitude, GPS_longitude, GPS_altitude, GPS_speed, GPS_heading, GPS_satellites,
  GPS_coord_x, GPS_coord_y, telemetry_mode, last_received_upLink, since_last_received_upLink, calibrate_heading, blackBox_path,
@@ -119,3 +121,10 @@ def controlInputRequired(current, current_v, target, timeToAlign, maxAuthority):
     # elif controlInput <= -1:
     #     controlInput = -1
     return controlInput
+
+def resonable_mean(raw_data_list):
+    raw_data_list.remove(max(raw_data_list))
+    raw_data_list.remove(max(raw_data_list))
+    raw_data_list.remove(min(raw_data_list))
+    raw_data_list.remove(min(raw_data_list))
+    return sum(raw_data_list) / len(raw_data_list)

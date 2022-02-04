@@ -9,7 +9,7 @@ def level0ControlLoop(readyToArm, readyToFly, current_X, current_Y, current_Head
                       touch_down_y, shared_pitch, shared_roll, shared_imu_heading, shared_raw_aileron_input,
                       shared_raw_elevator_input, shared_accceleration, desired_pitch, desired_roll, aileronTrim, elevatorTrim,
                       desired_vs, desired_heading, desired_throttle, manual_throttle_unlocked, flight_mode, manual_throttle_input,
-                      manual_control_update_freq, manual_roll_change_per_sec, manual_pitch_change_per_sec, circle_altitude, circle_bankAngle,
+                       manual_roll_change_per_sec, manual_pitch_change_per_sec, circle_altitude, circle_bankAngle,
                       Baro_altitude, Baro_vertical_speed, last_Baro_altitude, last_Baro_vertical_speed, Baro_temperature, last_Baro_temperature,
                       Pitot_pressure, Pitot_temperature, GPS_locked, GPS_latitude, GPS_longitude, GPS_altitude, GPS_speed, GPS_heading, GPS_satellites,
                       GPS_coord_x, GPS_coord_y, telemetry_mode, last_received_upLink, since_last_received_upLink, calibrate_heading, blackBox_path,
@@ -134,28 +134,28 @@ def level0ControlLoop(readyToArm, readyToFly, current_X, current_Y, current_Head
                     IMU_acceleration = _IMU_acceleration
 
             # linear_acceleration
-            imu_linear_acc = imu.linear_acceleration
-            IMU_acc_x_ = imu_linear_acc[0]
-            if IMU_acc_x_ is not None:
-                IMU_acc_x = (
-                    IMU_acc_x_ * IMU_acc_new_data_weight
-                    + last_IMU_acc_x * IMU_acc_data_smooth_out
-                )
-                last_IMU_acc_x = IMU_acc_x
+            # imu_linear_acc = imu.linear_acceleration
+            # IMU_acc_x_ = imu_linear_acc[0]
+            # if IMU_acc_x_ is not None:
+            #     IMU_acc_x = (
+            #         IMU_acc_x_ * IMU_acc_new_data_weight
+            #         + last_IMU_acc_x * IMU_acc_data_smooth_out
+            #     )
+            #     last_IMU_acc_x = IMU_acc_x
 
-                IMU_acc_y_ = imu_linear_acc[1]
-                IMU_acc_y = (
-                    IMU_acc_y_ * IMU_acc_new_data_weight
-                    + last_IMU_acc_y * IMU_acc_data_smooth_out
-                )
-                last_IMU_acc_y = IMU_acc_y
+            #     IMU_acc_y_ = imu_linear_acc[1]
+            #     IMU_acc_y = (
+            #         IMU_acc_y_ * IMU_acc_new_data_weight
+            #         + last_IMU_acc_y * IMU_acc_data_smooth_out
+            #     )
+            #     last_IMU_acc_y = IMU_acc_y
 
-                IMU_acc_z_ = imu_linear_acc[2]
-                IMU_acc_z = (
-                    IMU_acc_z_ * IMU_acc_new_data_weight
-                    + last_IMU_acc_z * IMU_acc_data_smooth_out
-                )
-                last_IMU_acc_z = IMU_acc_z
+            #     IMU_acc_z_ = imu_linear_acc[2]
+            #     IMU_acc_z = (
+            #         IMU_acc_z_ * IMU_acc_new_data_weight
+            #         + last_IMU_acc_z * IMU_acc_data_smooth_out
+            #     )
+            #     last_IMU_acc_z = IMU_acc_z
 
             # controls
             if not in_manual_control_mode:
@@ -183,7 +183,7 @@ def level0ControlLoop(readyToArm, readyToFly, current_X, current_Y, current_Head
                 )
                 # special cases
                 if over_loading:
-                    max_elevator_input_underLoad = last_elevator_input*0.2
+                    max_elevator_input_underLoad = last_elevator_input*0.5
                     if raw_elevator_input > max_elevator_input_underLoad:
                         raw_elevator_input = max_elevator_input_underLoad
                 if exceed_Max_BankAngle:
@@ -234,7 +234,7 @@ def higherlevelControlLoop(readyToArm, readyToFly, current_X, current_Y, current
                            touch_down_y, shared_pitch, shared_roll, shared_imu_heading, shared_raw_aileron_input,
                            shared_raw_elevator_input, shared_accceleration, desired_pitch, desired_roll, aileronTrim, elevatorTrim,
                            desired_vs, desired_heading, desired_throttle, manual_throttle_unlocked, flight_mode, manual_throttle_input,
-                           manual_control_update_freq, manual_roll_change_per_sec, manual_pitch_change_per_sec, circle_altitude, circle_bankAngle,
+                            manual_roll_change_per_sec, manual_pitch_change_per_sec, circle_altitude, circle_bankAngle,
                            Baro_altitude, Baro_vertical_speed, last_Baro_altitude, last_Baro_vertical_speed, Baro_temperature, last_Baro_temperature,
                            Pitot_pressure, Pitot_temperature, GPS_locked, GPS_latitude, GPS_longitude, GPS_altitude, GPS_speed, GPS_heading, GPS_satellites,
                            GPS_coord_x, GPS_coord_y, telemetry_mode, last_received_upLink, since_last_received_upLink, calibrate_heading, blackBox_path,
@@ -249,6 +249,21 @@ def higherlevelControlLoop(readyToArm, readyToFly, current_X, current_Y, current
     last_higherlevelControl_loop_update_time = time.monotonic()
     last_gps_loop_update_time = time.monotonic()
     blackBox_startingTimeStamp = time.monotonic()
+    # init flight (readyToFly)
+    flightInitCompleted = False
+    flightInit_in_progress = False
+    init_x_accumulater = []
+    init_y_accumulater = []
+    init_imu_heading_accumulater = []
+    init_gps_altitude_accumulater = []
+    # autoTrim
+    autoTrim_On = True
+    auto_trim_aileron_input_accumulater = []
+    auto_trim_elevator_input_accumulater = []
+    # calibrate_heading
+    calibrate_heading_progress = False
+    heading_calibration_accumulater = []
+
 
     with open(blackBox_path, "w") as blackBox:
         blackBoxWriter = csv.writer(blackBox, delimiter=",")
@@ -314,15 +329,16 @@ def higherlevelControlLoop(readyToArm, readyToFly, current_X, current_Y, current
                 Pitot_temperature_ = pitot.temperature
                 if Pitot_temperature_ is not None:
                     Pitot_temperature.value = Pitot_temperature_
+                #
 
                 # Flight control
                 # readyToArm
-                if not bool(readyToArm.value):
+                if not bool(flightInitCompleted):
                     time_since_start_up = time.time()-start_up_time
                     if time_since_start_up > 10 and GPS_locked.value == 1:
                         readyToArm.value = 1
 
-                if bool(readyToFly.value):
+                if bool(flightInitCompleted):
                     # throttle
                     if bool(manual_throttle_unlocked.value):
                         throttle_control(manual_throttle_input.value)
@@ -348,6 +364,22 @@ def higherlevelControlLoop(readyToArm, readyToFly, current_X, current_Y, current
                     elif desired_pitch.value < -normal_pitch:
                         desired_pitch.value = -normal_pitch
                     # level3ControlLoop
+                    # autoTrim
+                    if autoTrim_On:
+                        auto_trim_aileron_input_accumulater.append(shared_raw_aileron_input)
+                        auto_trim_elevator_input_accumulater.append(shared_raw_elevator_input)
+                        if len(auto_trim_aileron_input_accumulater)>=10:
+                            aileronTrim.value = resonable_mean(auto_trim_aileron_input_accumulater)
+                            elevatorTrim.value = resonable_mean(auto_trim_aileron_input_accumulater)
+                            auto_trim_aileron_input_accumulater = []
+                            auto_trim_aileron_input_accumulater = []
+                    # calibrate_heading
+                    if calibrate_heading_progress:
+                        heading_calibration_accumulater.append(GPS_heading.value - shared_imu_heading.value)
+                        if len(heading_calibration_accumulater)>=10:
+                            imu_heading_compensation.value = resonable_mean(auto_trim_aileron_input_accumulater)
+                            heading_calibration_accumulater = []
+                            calibrate_heading_progress = False
 
             if gps_loop_elapsed > gps_loop_interval:
                 last_gps_loop_update_time = current_time
@@ -378,6 +410,25 @@ def higherlevelControlLoop(readyToArm, readyToFly, current_X, current_Y, current
                         GPS_speed.value = gps.speed_knots * 0.51444
                     if gps.track_angle_deg is not None:
                         GPS_heading.value = gps.track_angle_deg
+                    
+                    if not flightInitCompleted:
+                        if readyToFly.value and not flightInit_in_progress:
+                            flightInit_in_progress = True
+                        else:
+                            init_x_accumulater.append(GPS_coord_x.value)
+                            init_y_accumulater.append(GPS_coord_y.value)
+                            init_imu_heading_accumulater.append(shared_imu_heading.value)
+                            init_gps_altitude_accumulater.append(GPS_altitude.value)
+                            if len(init_x_accumulater) >= 10:
+                                init_x.value = resonable_mean(init_x_accumulater)
+                                init_x_accumulater = []
+                                init_y.value = resonable_mean(init_y_accumulater)
+                                init_y_accumulater = []
+                                init_imu_heading.value = resonable_mean(init_imu_heading_accumulater)
+                                init_imu_heading_accumulater = []
+                                init_gps_altitude.value = resonable_mean(init_gps_altitude_accumulater)
+                                init_gps_altitude_accumulater = []
+                                flightInitCompleted = True
 
                 # data recorder (blackBox)
                 if True:  # readyToFly
@@ -458,6 +509,8 @@ def commLoop():
                     if flight_mode.value != 1:
                         manual_throttle_unlocked.value = 0
                         flight_mode.value = 1
+                        desired_pitch.value = 5
+                        desired_roll.value = 0
                     manual_roll_change_per_sec.value = float(tele_payload[0:2])
                     manual_pitch_change_per_sec.value = float(
                         tele_payload[2:4])
@@ -474,14 +527,14 @@ def commLoop():
                             desired_throttle.value = toga_thrust
                 elif tele_command == '9':  # Change Settings
                     param_index = int(tele_payload[0:2])
-                    param_value = int(tele_payload[2:4])
-
-                    # init the flight
-                    if param_index == 0 and bool(readyToArm.value):
-                        readyToFly.value = 1
-                    elif param_index == 1:
+                    if param_index == 0 and bool(readyToArm.value):# init the flight
+                        if readyToFly.value != 1:
+                            readyToFly.value = 1
+                    elif param_index == 1:# aileronTrim
+                        param_value = int(tele_payload[2:4])
                         aileronTrim.value += 0.01*param_value
-                    elif param_index == 2:
+                    elif param_index == 2:# elevatorTrim
+                        param_value = int(tele_payload[2:4])
                         elevatorTrim.value += 0.01*param_value
 
             else:
@@ -501,7 +554,7 @@ thread1 = Process(target=level0ControlLoop, args=(readyToArm, readyToFly, curren
                                                   touch_down_y, shared_pitch, shared_roll, shared_imu_heading, shared_raw_aileron_input,
                                                   shared_raw_elevator_input, shared_accceleration, desired_pitch, desired_roll, aileronTrim, elevatorTrim,
                                                   desired_vs, desired_heading, desired_throttle, manual_throttle_unlocked, flight_mode, manual_throttle_input,
-                                                  manual_control_update_freq, manual_roll_change_per_sec, manual_pitch_change_per_sec, circle_altitude, circle_bankAngle,
+                                                   manual_roll_change_per_sec, manual_pitch_change_per_sec, circle_altitude, circle_bankAngle,
                                                   Baro_altitude, Baro_vertical_speed, last_Baro_altitude, last_Baro_vertical_speed, Baro_temperature, last_Baro_temperature,
                                                   Pitot_pressure, Pitot_temperature, GPS_locked, GPS_latitude, GPS_longitude, GPS_altitude, GPS_speed, GPS_heading, GPS_satellites,
                                                   GPS_coord_x, GPS_coord_y, telemetry_mode, last_received_upLink, since_last_received_upLink, calibrate_heading, blackBox_path,
@@ -510,7 +563,7 @@ thread2 = Process(target=higherlevelControlLoop, args=(readyToArm, readyToFly, c
                                                        touch_down_y, shared_pitch, shared_roll, shared_imu_heading, shared_raw_aileron_input,
                                                        shared_raw_elevator_input, shared_accceleration, desired_pitch, desired_roll, aileronTrim, elevatorTrim,
                                                        desired_vs, desired_heading, desired_throttle, manual_throttle_unlocked, flight_mode, manual_throttle_input,
-                                                       manual_control_update_freq, manual_roll_change_per_sec, manual_pitch_change_per_sec, circle_altitude, circle_bankAngle,
+                                                        manual_roll_change_per_sec, manual_pitch_change_per_sec, circle_altitude, circle_bankAngle,
                                                        Baro_altitude, Baro_vertical_speed, last_Baro_altitude, last_Baro_vertical_speed, Baro_temperature, last_Baro_temperature,
                                                        Pitot_pressure, Pitot_temperature, GPS_locked, GPS_latitude, GPS_longitude, GPS_altitude, GPS_speed, GPS_heading, GPS_satellites,
                                                        GPS_coord_x, GPS_coord_y, telemetry_mode, last_received_upLink, since_last_received_upLink, calibrate_heading, blackBox_path,
