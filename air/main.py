@@ -366,9 +366,9 @@ def higherlevelControlLoop(readyToArm, readyToFly, current_X, current_Y, current
                     # autoTrim
                     if autoTrim_On:
                         auto_trim_aileron_input_accumulater.append(
-                            shared_raw_aileron_input)
+                            shared_raw_aileron_input.value)
                         auto_trim_elevator_input_accumulater.append(
-                            shared_raw_elevator_input)
+                            shared_raw_elevator_input.value)
                         if len(auto_trim_aileron_input_accumulater) >= 10:
                             aileronTrim.value = resonable_mean(
                                 auto_trim_aileron_input_accumulater)
