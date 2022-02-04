@@ -364,8 +364,8 @@ def higherlevelControlLoop(readyToArm, readyToFly, current_X, current_Y, current
                     # level3ControlLoop
                     # autoTrim
                     if autoTrim_On:
-                        aileronTrim.value += (aileronTrim.value-shared_raw_aileron_input.value)*autoTrim_effectiveness
-                        elevatorTrim.value += (elevatorTrim.value-shared_raw_elevator_input.value)*autoTrim_effectiveness
+                        aileronTrim.value += (shared_raw_aileron_input.value-aileronTrim.value)*autoTrim_effectiveness
+                        elevatorTrim.value += (shared_raw_elevator_input.value-elevatorTrim.value)*autoTrim_effectiveness
                     
             if gps_loop_elapsed > gps_loop_interval:
                 last_gps_loop_update_time = current_time
@@ -399,7 +399,7 @@ def higherlevelControlLoop(readyToArm, readyToFly, current_X, current_Y, current
 
                     # calibrate_heading
                     if heading_calibrate_On:
-                        imu_heading_compensation.value += (imu_heading_compensation.value-(GPS_heading.value - shared_imu_heading.value))*heading_calibration_effectiveness
+                        imu_heading_compensation.value += ((GPS_heading.value - shared_imu_heading.value)-imu_heading_compensation.value)*heading_calibration_effectiveness
                     # init Flight
                     if not flightInitCompleted:
                         if readyToFly.value and not flightInit_in_progress:
