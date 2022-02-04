@@ -10,7 +10,7 @@ max_BankAngle = 45
 max_pitch = 35
 
 max_aoa = 13
-max_g_force = 5
+max_g_force = 7
 
 # TOGA
 toga_thrust = 0.75
@@ -23,14 +23,13 @@ glide_slope = 20  # degrees
 
 
 # performance
-roll_authority = 30  # degrees per second
-pitch_authority = 20
+roll_authority = 90  # degrees per second
+pitch_authority = 25
 yaw_authority = 5
 
 control_softness = 1  # time to align in seconds
 
 min_airspeed = 15 / 3.6  # meters per second
-
 
 # sensor
 # imu

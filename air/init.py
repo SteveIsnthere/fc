@@ -122,6 +122,7 @@ def controlInputRequired(current, current_v, target, timeToAlign, maxAuthority):
     #     controlInput = -1
     return controlInput
 
+
 def resonable_mean(raw_data_list):
     raw_data_list.remove(max(raw_data_list))
     raw_data_list.remove(max(raw_data_list))

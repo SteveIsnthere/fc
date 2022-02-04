@@ -30,7 +30,7 @@ GPS_heading = np.array(data["GPS_heading"].tolist())
 GPS_speed = np.array(data["GPS_speed"].tolist())
 GPS_satellites = np.array(data["GPS_satellites"].tolist())
 
-accceleration = np.array(data["accceleration"].tolist())
+accceleration = np.array(data["accceleration"].tolist())/9.81
 
 # 3d flight path
 fig = plt.figure()
