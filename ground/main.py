@@ -90,6 +90,7 @@ def sendGamepadCommand(gamepadInput):
     throttle_cooked = int(throttle_raw*99)
     if throttle_cooked<10:
         throttle_cooked = "0"+str(throttle_cooked)
+    print(throttle_cooked)
     elevator_cooked = int(elevator_raw*99)
     aileron_cooked = int(aileron_raw*99)
     if aileron_cooked<10:

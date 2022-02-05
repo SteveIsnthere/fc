@@ -119,10 +119,7 @@ class KSP_Pitot:
         return 13
 
 class KSP_lora:
-    @property
-    def pressure(self):
-        return 1
-    def receive(self,timeout):
+    def receive(self,timeout=0.5):
         return shared.get('ground')
     def send(self,data):
         shared.set('air', data)

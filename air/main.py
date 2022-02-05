@@ -258,7 +258,7 @@ def higherlevelControlLoop(readyToArm, readyToFly, current_X, current_Y, current
     init_gps_altitude_accumulater = []
     # autoTrim
     autoTrim_On = True
-    autoTrim_effectiveness = 1/(secondary_loop_freq*5)
+    autoTrim_effectiveness = 1/(secondary_loop_freq*10)
     # calibrate_heading
     heading_calibrate_On = True
     heading_calibration_effectiveness = 1/(gps_loop_freq*10)
@@ -333,8 +333,9 @@ def higherlevelControlLoop(readyToArm, readyToFly, current_X, current_Y, current
                 # readyToArm
                 if not flightInitCompleted:
                     time_since_start_up = time.time()-start_up_time
-                    if time_since_start_up > 10 and GPS_locked.value == 1:
+                    if time_since_start_up > 10 and GPS_locked.value == 1 and readyToArm.value == 0:
                         readyToArm.value = 1
+                        print("readyToArm")
 
                 if flightInitCompleted:
                     # throttle
@@ -407,7 +408,8 @@ def higherlevelControlLoop(readyToArm, readyToFly, current_X, current_Y, current
                     if not flightInitCompleted:
                         if readyToFly.value and not flightInit_in_progress:
                             flightInit_in_progress = True
-                        else:
+                            print("flightInit_in_progress")
+                        elif flightInit_in_progress:
                             init_x_accumulater.append(GPS_coord_x.value)
                             init_y_accumulater.append(GPS_coord_y.value)
                             init_imu_heading_accumulater.append(
@@ -428,6 +430,8 @@ def higherlevelControlLoop(readyToArm, readyToFly, current_X, current_Y, current
                                     init_gps_altitude_accumulater)
                                 init_gps_altitude_accumulater = []
                                 flightInitCompleted = True
+                                blackBox_startingTimeStamp = time.monotonic()
+                                print("flightInitCompleted")
 
                 # data recorder (blackBox)
                 if flightInitCompleted:  # readyToFly
@@ -488,9 +492,10 @@ def commLoop(readyToArm, readyToFly, current_X, current_Y, current_Heading, init
             if tele_command == '0':  # full manual
                 if flight_mode.value != 0:
                     manual_throttle_unlocked.value = 1
+                    print("full manual mode")
                     flight_mode.value = 0
-                manual_aileron_input = (int(tele_payload[0:2])/99*100-50)*0.02
-                manual_elevator_input = (int(tele_payload[2:4])/99*100-50)*0.02
+                manual_aileron_input = ((int(tele_payload[0:2])/99*100-50)*0.02)**3
+                manual_elevator_input = ((int(tele_payload[2:4])/99*100-50)*0.02)**3
                 manual_throttle_input.value = (int(tele_payload[4:6])/99*100-50)*0.02
                 shared_raw_aileron_input.value = manual_aileron_input
                 shared_raw_elevator_input.value = manual_elevator_input
