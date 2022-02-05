@@ -1,9 +1,8 @@
 from cmath import pi
 import krpc
-import os
-reciver_path = os.path.join(os.path.expanduser('~'), "dummyRadio.txt")
-radio_path = os.path.join(os.path.expanduser('~'), "dummyReciver.txt")
-reciver = open(reciver_path, "r")
+from redis import Redis
+shared = Redis('localhost')
+shared.set('ground','')
 
 conn = krpc.connect(name='sim')
 vessel = conn.space_center.active_vessel
@@ -124,12 +123,9 @@ class KSP_lora:
     def pressure(self):
         return 1
     def receive(self,timeout):
-        telemetry = reciver.read().encode()
-        return telemetry
+        return shared.get('ground')
     def send(self,data):
-        f = open(radio_path, "w")
-        f.write(data)
-        f.close()
+        shared.set('air', data)
 
 from settings import *
 

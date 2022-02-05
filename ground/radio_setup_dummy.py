@@ -1,7 +1,6 @@
-import os
-radio_path = os.path.join(os.path.expanduser('~'), "dummyRadio.txt")
-reciver_path = os.path.join(os.path.expanduser('~'), "dummyReciver.txt")
-reciver = open(reciver_path, "r")
+from redis import Redis
+shared = Redis('localhost')
+
 import time
 
 last_sent_data = time.time()
@@ -15,15 +14,11 @@ def sendData(content):
         last_sent_data = current_time
     else:
         return
-
-    print(content)
-    f = open(radio_path, "w")
-    f.write(content)
-    f.close()
+    shared.set('ground',content)
 
 
 def reciveTelemetry():
-    telemetry = None
-
-    telemetry = reciver.readline().split(",")
-    return telemetry
+    telemetry_ = shared.get('air')
+    if telemetry_ != "":
+        telemetry = telemetry_.split(",")
+        return telemetry

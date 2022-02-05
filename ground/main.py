@@ -23,33 +23,24 @@ def sendGamepadCommand(gamepadInput):
         pass
     else:
         if multi_purpose1 == 4:#leftupperpressure pressed
-            print('leftupperpressure pressed')
             return
         elif multi_purpose1 == 8:#rightupperpressure pressed
-            print('rightupperpressure pressed')
             return
         elif multi_purpose1 == 12:# both upperpressure pressed 
-            print('both upperpressure pressed')
             return
         elif multi_purpose1 == 64:# middle left 1
-            print('middle left 1')
             return
         elif multi_purpose1 == 2:# middle left 2
-            print('middle left 2')
             return
         elif multi_purpose1 == 32:# middle right 1
-            print('middle right 1')
             return
         elif multi_purpose1 == 1:# middle right 2
-            print('middle right 2')
             return
         elif multi_purpose1 == 16:# middle stadia
             # init the flight
-            print('middle stadia')
             sendData("90")
             return
         elif multi_purpose1 == 128:# right stick pressed
-            print('right stick pressed')
             return
 
     if multi_purpose2 == 0:
@@ -57,54 +48,42 @@ def sendGamepadCommand(gamepadInput):
     else:
         if multi_purpose2 == 4:#leftupperbutton pressed
             # full manual mode
-            print('leftupperbutton pressed')
             control_mode = 0
             return
         elif multi_purpose2 == 2:#rightupperbutton pressed
             # fly by wire (partial manual) mode
-            print('rightupperbutton pressed')
             control_mode = 1
             return
         elif multi_purpose2 == 6:#both upperbutton pressed 
-            print('both upperbutton pressed ')
             return
         elif multi_purpose2 == 8:#up (right)
-            print('Y')
             return
         elif multi_purpose2 == 64:#down
             # TOGA MODE
-            print('A')
             control_mode = 21
             sendData("21")
             return
         elif multi_purpose2 == 16:#left
-            print('X')
             return
         elif multi_purpose2 == 32:#right
-            print('B')
             return
         elif multi_purpose2 == 1:#left stick pressed
-            print('left stick pressed')
             return
 
     if left_arrow_pad == 8:
         pass
     else:
         if left_arrow_pad == 0:#up
-            print('arrow_pad up')
             return
         elif left_arrow_pad == 4:#down
-            print('arrow_pad down')
             return
         elif left_arrow_pad == 6:#left
-            print('arrow_pad left')
             return
         elif left_arrow_pad == 2:#right
-            print('arrow_pad right')
             return
     
     # raw values out of 1
-    throttle_raw = stick1y/255
+    throttle_raw = 1-stick1y/255
     aileron_raw = stick2x/255
     elevator_raw = stick2y/255
     # out of 99
