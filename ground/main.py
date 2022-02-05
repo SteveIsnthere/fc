@@ -1,34 +1,10 @@
+from radio_setup_dummy import *
 import hid
-import time
-from multiprocessing import Value
-from multiprocessing import Process
-import serial
-#radio = serial.Serial('/dev/cu.usbmodem101', baudrate=115200)
 gamepad = hid.device()
 gamepad.open(0x18d1,0x9400)
 gamepad.set_nonblocking(True)
 
-aileron_gain = 3 # can only be odd number
-elevator_gain = 3 
-
 control_mode = 1
-last_sent_data = time.time()
-min_sentData_interval = 1/60
-def sendData(content):
-    global last_sent_data
-    current_time = time.time()
-    since_last_sent = current_time-last_sent_data
-    if since_last_sent>min_sentData_interval:
-        last_sent_data = current_time
-    else:
-        return
-    
-    try:
-        print(content)
-        package = content.encode("ascii")
-        #radio.write(package)
-    except:
-        pass
 
 def sendGamepadCommand(gamepadInput):
     global control_mode
@@ -151,18 +127,12 @@ def sendGamepadCommand(gamepadInput):
 
     
 
-def reciveTelemetry():
-    telemetry = None
-    try:
-        #telemetry = radio.readline().decode("ascii").split(",")
-        print(telemetry)
-    except:
-        print("reciveTelemetry() Error")
+
 
 while True:
     gamepadInput = gamepad.read(64)
     if gamepadInput:
         sendGamepadCommand(gamepadInput)
-    #reciveTelemetry()
+    #telemetry = reciveTelemetry()
 
 

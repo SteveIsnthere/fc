@@ -1,4 +1,4 @@
-from initHardWare import *
+from initHardWare_ksp import *
 import os
 import numpy as np
 import time

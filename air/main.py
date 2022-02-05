@@ -364,9 +364,11 @@ def higherlevelControlLoop(readyToArm, readyToFly, current_X, current_Y, current
                     # level3ControlLoop
                     # autoTrim
                     if autoTrim_On:
-                        aileronTrim.value += (shared_raw_aileron_input.value-aileronTrim.value)*autoTrim_effectiveness
-                        elevatorTrim.value += (shared_raw_elevator_input.value-elevatorTrim.value)*autoTrim_effectiveness
-                    
+                        aileronTrim.value += (shared_raw_aileron_input.value -
+                                              aileronTrim.value)*autoTrim_effectiveness
+                        elevatorTrim.value += (shared_raw_elevator_input.value -
+                                               elevatorTrim.value)*autoTrim_effectiveness
+
             if gps_loop_elapsed > gps_loop_interval:
                 last_gps_loop_update_time = current_time
                 # print(gps_loop_elapsed)
@@ -399,7 +401,8 @@ def higherlevelControlLoop(readyToArm, readyToFly, current_X, current_Y, current
 
                     # calibrate_heading
                     if heading_calibrate_On:
-                        imu_heading_compensation.value += ((GPS_heading.value - shared_imu_heading.value)-imu_heading_compensation.value)*heading_calibration_effectiveness
+                        imu_heading_compensation.value += ((GPS_heading.value - shared_imu_heading.value) -
+                                                           imu_heading_compensation.value)*heading_calibration_effectiveness
                     # init Flight
                     if not flightInitCompleted:
                         if readyToFly.value and not flightInit_in_progress:
@@ -427,8 +430,7 @@ def higherlevelControlLoop(readyToArm, readyToFly, current_X, current_Y, current
                                 flightInitCompleted = True
 
                 # data recorder (blackBox)
-                # if flightInitCompleted:  # readyToFly
-                if True:
+                if flightInitCompleted:  # readyToFly
                     timeStamp = round(
                         current_time - blackBox_startingTimeStamp, 3)
                     record = [
@@ -456,25 +458,16 @@ def higherlevelControlLoop(readyToArm, readyToFly, current_X, current_Y, current
                     # print("wrote at "+str(timeStamp))
 
 
-def commLoop():
-    global telemetry_mode
-    global last_received_upLink
-    global since_last_received_upLink
+def commLoop(readyToArm, readyToFly, current_X, current_Y, current_Heading, init_x, init_y, init_imu_heading, init_gps_altitude, touch_down_x,
+             touch_down_y, shared_pitch, shared_roll, shared_imu_heading, shared_raw_aileron_input,
+             shared_raw_elevator_input, shared_accceleration, desired_pitch, desired_roll, aileronTrim, elevatorTrim,
+             desired_vs, desired_heading, desired_throttle, manual_throttle_unlocked, calibrate_heading, imu_heading_compensation, flight_mode, manual_throttle_input,
+             manual_roll_change_per_sec, manual_pitch_change_per_sec, circle_altitude, circle_bankAngle,
+             Baro_altitude, Baro_vertical_speed, last_Baro_altitude, last_Baro_vertical_speed, Baro_temperature, last_Baro_temperature,
+             Pitot_pressure, Pitot_temperature, GPS_locked, GPS_latitude, GPS_longitude, GPS_altitude, GPS_speed, GPS_heading, GPS_satellites,
+             GPS_coord_x, GPS_coord_y, telemetry_mode, last_received_upLink, since_last_received_upLink, blackBox_path,
+             start_up_time, control_loop_interval, secondary_loop_interval, max_acceleration):
 
-    global readyToFly
-    global flight_mode
-    global manual_throttle_unlocked
-
-    global manual_throttle_input
-
-    global manual_roll_change_per_sec
-    global manual_pitch_change_per_sec
-
-    global circle_altitude
-    global desired_throttle
-
-    global aileronTrim
-    global elevatorTrim
     while True:
         receivedPacket = None
         receivedContent = None
@@ -566,12 +559,20 @@ thread2 = Process(target=higherlevelControlLoop, args=(readyToArm, readyToFly, c
                                                        Pitot_pressure, Pitot_temperature, GPS_locked, GPS_latitude, GPS_longitude, GPS_altitude, GPS_speed, GPS_heading, GPS_satellites,
                                                        GPS_coord_x, GPS_coord_y, telemetry_mode, last_received_upLink, since_last_received_upLink, blackBox_path,
                                                        start_up_time, control_loop_interval, secondary_loop_interval, max_acceleration))
-# thread3 = Process(target=commLoop, args=())
+thread3 = Process(target=commLoop, args=(readyToArm, readyToFly, current_X, current_Y, current_Heading, init_x, init_y, init_imu_heading, init_gps_altitude, touch_down_x,
+                                         touch_down_y, shared_pitch, shared_roll, shared_imu_heading, shared_raw_aileron_input,
+                                         shared_raw_elevator_input, shared_accceleration, desired_pitch, desired_roll, aileronTrim, elevatorTrim,
+                                         desired_vs, desired_heading, desired_throttle, manual_throttle_unlocked, calibrate_heading, imu_heading_compensation, flight_mode, manual_throttle_input,
+                                         manual_roll_change_per_sec, manual_pitch_change_per_sec, circle_altitude, circle_bankAngle,
+                                         Baro_altitude, Baro_vertical_speed, last_Baro_altitude, last_Baro_vertical_speed, Baro_temperature, last_Baro_temperature,
+                                         Pitot_pressure, Pitot_temperature, GPS_locked, GPS_latitude, GPS_longitude, GPS_altitude, GPS_speed, GPS_heading, GPS_satellites,
+                                         GPS_coord_x, GPS_coord_y, telemetry_mode, last_received_upLink, since_last_received_upLink, blackBox_path,
+                                         start_up_time, control_loop_interval, secondary_loop_interval, max_acceleration))
 
 if __name__ == '__main__':
     thread1.start()
     thread2.start()
-    # thread3.start()
+    thread3.start()
     thread1.join()
     thread2.join()
-    # thread3.join()
+    thread3.join()
