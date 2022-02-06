@@ -6,6 +6,7 @@ from multiprocessing import Value
 
 # init parameters
 readyToArm = Value("i", 0)
+start_FlightInit = Value("i", 0)
 readyToFly = Value("i", 0)  # Armed
 
 current_X = Value("f", 0)
@@ -98,7 +99,7 @@ secondary_loop_interval = 1 / secondary_loop_freq
 max_acceleration = max_g_force * 9.81
 
 '''
-(readyToArm, readyToFly, current_X, current_Y, current_Heading, init_x, init_y, init_imu_heading, init_gps_altitude,touch_down_x,
+(readyToArm, start_FlightInit, readyToFly, current_X, current_Y, current_Heading, init_x, init_y, init_imu_heading, init_gps_altitude,touch_down_x,
  touch_down_y, shared_pitch, shared_roll, shared_imu_heading, shared_raw_aileron_input,
  shared_raw_elevator_input, shared_accceleration, desired_pitch, desired_roll, aileronTrim, elevatorTrim,
  desired_vs, desired_heading, desired_throttle, manual_throttle_unlocked, calibrate_heading,imu_heading_compensation,flight_mode, manual_throttle_input,
