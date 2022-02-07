@@ -1,1 +1,5 @@
 /.DS_Store
+/air/dump.rdb
+air/__pycache__
+ground/__pycache__
+
