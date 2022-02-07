@@ -472,6 +472,8 @@ def commLoop(readyToArm, start_FlightInit, readyToFly, current_X, current_Y, cur
              Pitot_pressure, Pitot_temperature, GPS_locked, GPS_latitude, GPS_longitude, GPS_altitude, GPS_speed, GPS_heading, GPS_satellites,
              GPS_coord_x, GPS_coord_y, telemetry_mode, last_received_upLink, since_last_received_upLink, blackBox_path,
              start_up_time, control_loop_interval, secondary_loop_interval, max_acceleration):
+    
+    telemetry_delim = ','
 
     while True:
         receivedPacket = None
@@ -558,14 +560,14 @@ def commLoop(readyToArm, start_FlightInit, readyToFly, current_X, current_Y, cur
         else:  # not readyToArm
             plane_status = '3'
 
-        plane_mode = str(flight_mode.value)
+        plane_mode = flight_mode.value
 
-        plane_pitch = str(int(shared_pitch.value))
-        plane_roll = str(int(shared_roll.value))
-        plane_heading = str(int(shared_imu_heading.value))
+        plane_pitch = int(shared_pitch.value)
+        plane_roll = int(shared_roll.value)
+        plane_heading = int(shared_imu_heading.value)
+        telemetry_data = [plane_status,plane_mode,plane_pitch,plane_roll,plane_heading]
 
-        contentToSent = plane_status + "-" + plane_mode + "-" + \
-            plane_pitch + "-" + plane_roll + "-" + plane_heading
+        contentToSent = telemetry_delim.join([str(x) for x in telemetry_data])
         packetToSent = contentToSent.encode("ascii")
         rfm9x.send(packetToSent)
         #     except:
