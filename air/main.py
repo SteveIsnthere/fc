@@ -60,6 +60,7 @@ def level0ControlLoop(readyToArm, start_FlightInit, readyToFly, current_X, curre
     last_secondary_loop_update_time = time.monotonic()
 
     while True:
+        time.sleep(0.0005)
         current_time = time.monotonic()
         control_loop_elapsed = current_time - last_control_loop_update_time
         secondary_loop_elapsed = current_time - last_secondary_loop_update_time
@@ -257,7 +258,6 @@ def higherlevelControlLoop(readyToArm, start_FlightInit, readyToFly, current_X, 
     init_imu_heading_accumulater = []
     init_gps_altitude_accumulater = []
     # autoTrim
-    autoTrim_On = True
     autoTrim_effectiveness = 1/(secondary_loop_freq*10)
     # calibrate_heading
     heading_calibrate_On = True
@@ -289,10 +289,12 @@ def higherlevelControlLoop(readyToArm, start_FlightInit, readyToFly, current_X, 
             ]
         )  # header
         while True:
+            time.sleep(0.0005)
             current_time = time.monotonic()
             higherlevelControl_loop_elapsed = current_time - \
                 last_higherlevelControl_loop_update_time
             gps_loop_elapsed = current_time - last_gps_loop_update_time
+            
             # sensor update & #Flight control
             if higherlevelControl_loop_elapsed > higherlevelControl_loop_interval:
                 last_higherlevelControl_loop_update_time = current_time
@@ -364,7 +366,7 @@ def higherlevelControlLoop(readyToArm, start_FlightInit, readyToFly, current_X, 
                         desired_pitch.value = -normal_pitch
                     # level3ControlLoop
                     # autoTrim
-                    if autoTrim_On:
+                    if flight_mode.value != 0:
                         aileronTrim.value += (shared_raw_aileron_input.value -
                                               aileronTrim.value)*autoTrim_effectiveness
                         elevatorTrim.value += (shared_raw_elevator_input.value -
@@ -476,6 +478,7 @@ def commLoop(readyToArm, start_FlightInit, readyToFly, current_X, current_Y, cur
     telemetry_delim = ','
 
     while True:
+        time.sleep(0.0005)
         receivedPacket = None
         receivedContent = None
         contentToSent = ""
@@ -520,14 +523,18 @@ def commLoop(readyToArm, start_FlightInit, readyToFly, current_X, current_Y, cur
                 manual_throttle_input.value = float(tele_payload[4:6])*0.01
             elif tele_command == '2':  # fully auto modes
                 fully_auto_mode = int(tele_payload[0])
-                mode_num = fully_auto_mode+2
-                if flight_mode.value != mode_num:
-                    manual_throttle_unlocked.value = 0
-                    flight_mode.value = mode_num
-                    if mode_num == 3:
-                        circle_altitude.value = GPS_altitude.value
-                    elif mode_num == 4:
-                        desired_throttle.value = toga_thrust
+                flight_mode.value = int(tele_command + str(fully_auto_mode))
+                manual_throttle_unlocked.value = 0
+                if fully_auto_mode == 1:
+                    circle_altitude.value = GPS_altitude.value
+                elif fully_auto_mode == 2:
+                    desired_pitch.value = toga_pitch
+                    desired_roll.value = 0
+                    desired_throttle.value = toga_thrust
+                elif fully_auto_mode == 3:
+                    pass
+                elif fully_auto_mode == 4:
+                    pass
             elif tele_command == '9':  # Change Settings
                 param_index = int(tele_payload[0:2])
                 # init the flight
@@ -536,10 +543,24 @@ def commLoop(readyToArm, start_FlightInit, readyToFly, current_X, current_Y, cur
                         start_FlightInit.value = 1
                 elif param_index == 1:  # aileronTrim
                     param_value = int(tele_payload[2:4])
-                    aileronTrim.value += 0.01*param_value
+                    if param_value == 1:
+                        aileronTrim.value += trim_tick
+                        if aileronTrim.value > 1:
+                            aileronTrim.value = 1
+                    else:
+                        aileronTrim.value -= trim_tick
+                        if aileronTrim.value < -1:
+                            aileronTrim.value = -1
                 elif param_index == 2:  # elevatorTrim
                     param_value = int(tele_payload[2:4])
-                    elevatorTrim.value += 0.01*param_value
+                    if param_value == 1:
+                        elevatorTrim.value += trim_tick
+                        if elevatorTrim.value > 1:
+                            elevatorTrim.value = 1
+                    else:
+                        elevatorTrim.value -= trim_tick
+                        if elevatorTrim.value < -1:
+                            elevatorTrim.value = -1
 
         #     else:
         #         continue

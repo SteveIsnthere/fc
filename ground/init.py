@@ -1,4 +1,4 @@
-from radio_setup_dummy import *
+from radio_setup_ksp import *
 import hid
 import os
 gamepad = hid.device()
@@ -77,12 +77,16 @@ def sendGamepadCommand(gamepadInput):
         pass
     else:
         if left_arrow_pad == 0:#up
+            sendData("920")
             return
         elif left_arrow_pad == 4:#down
+            sendData("921")
             return
         elif left_arrow_pad == 6:#left
+            sendData("910")
             return
         elif left_arrow_pad == 2:#right
+            sendData("911")
             return
     
     # raw values out of 1

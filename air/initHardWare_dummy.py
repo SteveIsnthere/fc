@@ -1,4 +1,5 @@
 from settings import *
+import numpy as np
 import board
 import busio
 from digitalio import DigitalInOut, Direction, Pull
@@ -16,7 +17,7 @@ rfm9x.tx_power = 23
 class Dummy_baro:
     @property
     def altitude(self):
-        return 0
+        return np.random.rand()*10
     @property
     def temperature(self):
         return 0

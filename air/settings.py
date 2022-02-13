@@ -27,6 +27,8 @@ roll_authority = 90  # degrees per second
 pitch_authority = 25
 yaw_authority = 5
 
+trim_tick = 0.05
+
 control_softness = 1  # time to align in seconds
 
 min_airspeed = 15 / 3.6  # meters per second
