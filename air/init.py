@@ -1,4 +1,4 @@
-from initHardWare_dummy import *
+from initHardWare_ksp import *
 import os
 import numpy as np
 import time
@@ -43,7 +43,7 @@ manual_throttle_unlocked = Value("i", 0)
 calibrate_heading = Value("i", 0)
 imu_heading_compensation = Value("f", 0)
 # flight modes
-flight_mode = Value("i", 1)
+flight_mode = Value("i", 0)
 # 0:full manual
 manual_throttle_input = Value("f", 0)
 # 1:fly by wire (partial manual)

@@ -28,6 +28,7 @@ def reciveTelemetry():
     else:
         return None
     telemetry_raw = shared.get('air')
+    shared.set('air',"")
     if telemetry_raw is None:        
         return None
     telemetry = telemetry_raw.decode("ascii")

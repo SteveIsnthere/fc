@@ -13,7 +13,7 @@ max_aoa = 13
 max_g_force = 7
 
 # TOGA
-toga_thrust = 0.75
+toga_thrust = 0.99
 toga_pitch = 20
 
 # autoland&rth
@@ -24,7 +24,7 @@ glide_slope = 20  # degrees
 
 # performance
 roll_authority = 90  # degrees per second
-pitch_authority = 25
+pitch_authority = 65
 yaw_authority = 5
 
 trim_tick = 0.05

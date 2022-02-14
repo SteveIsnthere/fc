@@ -63,10 +63,13 @@ def sendGamepadCommand(gamepadInput):
             return
         elif multi_purpose2 == 64:#down
             # TOGA MODE
-            control_mode = 21
-            sendData("21")
+            control_mode = 22
+            sendData("22")
             return
         elif multi_purpose2 == 16:#left
+            # Circle mode
+            control_mode = 21
+            sendData("21")
             return
         elif multi_purpose2 == 32:#right
             return
@@ -88,25 +91,25 @@ def sendGamepadCommand(gamepadInput):
         elif left_arrow_pad == 2:#right
             sendData("911")
             return
-    
-    # raw values out of 1
-    throttle_raw = 1-stick1y/255
-    aileron_raw = stick2x/255
-    elevator_raw = stick2y/255
-    # out of 99
-    throttle_cooked = int(throttle_raw*99)
-    if throttle_cooked<10:
-        throttle_cooked = "0"+str(throttle_cooked)
-    elevator_cooked = int(elevator_raw*99)
-    aileron_cooked = int(aileron_raw*99)
-    if aileron_cooked<10:
-        aileron_cooked = "0"+str(aileron_cooked)
-    elevator_cooked = int(elevator_raw*99)
-    if elevator_cooked<10:
-        elevator_cooked = "0"+str(elevator_cooked)
 
-    if control_mode == 0:
-        command = "0"
+    if control_mode == 0 or control_mode == 1:
+        # raw values out of 1
+        throttle_raw = 1-stick1y/255
+        aileron_raw = stick2x/255
+        elevator_raw = stick2y/255
+        # out of 99
+        throttle_cooked = int(throttle_raw*99)
+        if throttle_cooked<10:
+            throttle_cooked = "0"+str(throttle_cooked)
+        elevator_cooked = int(elevator_raw*99)
+        aileron_cooked = int(aileron_raw*99)
+        if aileron_cooked<10:
+            aileron_cooked = "0"+str(aileron_cooked)
+        elevator_cooked = int(elevator_raw*99)
+        if elevator_cooked<10:
+            elevator_cooked = "0"+str(elevator_cooked)
+
+        command = str(control_mode)
         payload = str(aileron_cooked)+str(elevator_cooked)+str(throttle_cooked)
         content = command+payload
         sendData(content)

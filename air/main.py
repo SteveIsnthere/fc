@@ -294,7 +294,7 @@ def higherlevelControlLoop(readyToArm, start_FlightInit, readyToFly, current_X, 
             higherlevelControl_loop_elapsed = current_time - \
                 last_higherlevelControl_loop_update_time
             gps_loop_elapsed = current_time - last_gps_loop_update_time
-            
+
             # sensor update & #Flight control
             if higherlevelControl_loop_elapsed > higherlevelControl_loop_interval:
                 last_higherlevelControl_loop_update_time = current_time
@@ -341,7 +341,7 @@ def higherlevelControlLoop(readyToArm, start_FlightInit, readyToFly, current_X, 
 
                 if flightInitCompleted:
                     # throttle
-                    if bool(manual_throttle_unlocked.value):
+                    if manual_throttle_unlocked.value:
                         throttle_control(manual_throttle_input.value)
                     else:
                         throttle_control(desired_throttle.value)
@@ -474,7 +474,7 @@ def commLoop(readyToArm, start_FlightInit, readyToFly, current_X, current_Y, cur
              Pitot_pressure, Pitot_temperature, GPS_locked, GPS_latitude, GPS_longitude, GPS_altitude, GPS_speed, GPS_heading, GPS_satellites,
              GPS_coord_x, GPS_coord_y, telemetry_mode, last_received_upLink, since_last_received_upLink, blackBox_path,
              start_up_time, control_loop_interval, secondary_loop_interval, max_acceleration):
-    
+
     telemetry_delim = ','
 
     while True:
@@ -513,37 +513,48 @@ def commLoop(readyToArm, start_FlightInit, readyToFly, current_X, current_Y, cur
                     manual_elevator_input, elevatorTrim.value)
             elif tele_command == '1':  # fly by wire (partial manual)
                 if flight_mode.value != 1:
-                    manual_throttle_unlocked.value = 0
+                    manual_throttle_unlocked.value = 1
                     flight_mode.value = 1
-                    desired_pitch.value = 5
-                    desired_roll.value = 0
-                manual_roll_change_per_sec.value = float(tele_payload[0:2])
-                manual_pitch_change_per_sec.value = float(
-                    tele_payload[2:4])
-                manual_throttle_input.value = float(tele_payload[4:6])*0.01
+
+                desired_pitch.value = 5
+                desired_roll.value = 0
+                manual_roll_input = (
+                    (int(tele_payload[0:2])/99*100-50)*0.02)**3
+                manual_pitch_input = (
+                    (int(tele_payload[2:4])/99*100-50)*0.02)**3
+                manual_throttle_input.value = (
+                    int(tele_payload[4:6])/99*100-50)*0.02
+
+                desired_pitch.value = manual_pitch_input * max_pitch + 3
+                desired_roll.value = manual_roll_input * max_BankAngle
             elif tele_command == '2':  # fully auto modes
+                manual_throttle_unlocked.value = 0
                 fully_auto_mode = int(tele_payload[0])
                 flight_mode.value = int(tele_command + str(fully_auto_mode))
                 manual_throttle_unlocked.value = 0
                 if fully_auto_mode == 1:
                     circle_altitude.value = GPS_altitude.value
+                    desired_pitch.value = toga_pitch/2
+                    desired_roll.value = 25
+                    desired_throttle.value = 0.75
                 elif fully_auto_mode == 2:
                     desired_pitch.value = toga_pitch
                     desired_roll.value = 0
                     desired_throttle.value = toga_thrust
+                    print("toga")
                 elif fully_auto_mode == 3:
                     pass
                 elif fully_auto_mode == 4:
                     pass
             elif tele_command == '9':  # Change Settings
                 param_index = int(tele_payload[0:2])
+                print(param_index)
                 # init the flight
                 if param_index == 0 and bool(readyToArm.value):
                     if readyToFly.value != 1:
                         start_FlightInit.value = 1
-                elif param_index == 1:  # aileronTrim
-                    param_value = int(tele_payload[2:4])
-                    if param_value == 1:
+                elif param_index == 10 or param_index == 11:  # aileronTrim
+                    if param_index == 11:
                         aileronTrim.value += trim_tick
                         if aileronTrim.value > 1:
                             aileronTrim.value = 1
@@ -551,9 +562,8 @@ def commLoop(readyToArm, start_FlightInit, readyToFly, current_X, current_Y, cur
                         aileronTrim.value -= trim_tick
                         if aileronTrim.value < -1:
                             aileronTrim.value = -1
-                elif param_index == 2:  # elevatorTrim
-                    param_value = int(tele_payload[2:4])
-                    if param_value == 1:
+                elif param_index == 20 or param_index == 21:  # elevatorTrim
+                    if param_index == 21:
                         elevatorTrim.value += trim_tick
                         if elevatorTrim.value > 1:
                             elevatorTrim.value = 1
@@ -586,7 +596,8 @@ def commLoop(readyToArm, start_FlightInit, readyToFly, current_X, current_Y, cur
         plane_pitch = int(shared_pitch.value)
         plane_roll = int(shared_roll.value)
         plane_heading = int(shared_imu_heading.value)
-        telemetry_data = [plane_status,plane_mode,plane_pitch,plane_roll,plane_heading]
+        telemetry_data = [plane_status, plane_mode,
+                          plane_pitch, plane_roll, plane_heading]
 
         contentToSent = telemetry_delim.join([str(x) for x in telemetry_data])
         packetToSent = contentToSent.encode("ascii")

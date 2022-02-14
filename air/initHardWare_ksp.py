@@ -120,7 +120,9 @@ class KSP_Pitot:
 
 class KSP_lora:
     def receive(self,timeout=0.5):
-        return shared.get('ground')
+        d = shared.get('ground')
+        shared.set('ground','')
+        return d
     def send(self,data):
         shared.set('air', data)
 
